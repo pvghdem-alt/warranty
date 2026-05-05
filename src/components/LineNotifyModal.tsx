@@ -65,7 +65,11 @@ export default function LineNotifyModal({
            return `${idx+1}. 【${issue.issueName}】 - 狀態: ${issue.status} (已等待 ${days} 天)`;
         }).join('\n');
 
-        const baseUrl = window.location.origin + window.location.pathname;
+        let currentOrigin = window.location.origin;
+        if (currentOrigin.includes('-dev-')) {
+          currentOrigin = currentOrigin.replace('-dev-', '-pre-');
+        }
+        const baseUrl = currentOrigin + window.location.pathname;
         const vendorDashboardLink = `${baseUrl}?vendor=${encodeURIComponent(vendorCompany)}`;
         
         let msg = `🚧 【維修通知】\n工程：${projectName}\n項目：${issueName}\n狀態：${status}\n廠商：${vendorCompany || '未指定'}\n\n`;

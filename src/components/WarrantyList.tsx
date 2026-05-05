@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import ProjectIssuesModal from './ProjectIssuesModal';
+import ConfirmModal from './ConfirmModal';
 
 interface WarrantyListProps {
   onEdit: (warranty: Warranty) => void;
@@ -34,6 +35,7 @@ export default function WarrantyList({ onEdit }: WarrantyListProps) {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedProjectForIssues, setSelectedProjectForIssues] = useState<{id: string, name: string, vendor: string} | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; id: string | null }>({ isOpen: false, id: null });
 
   useEffect(() => {
     const q = query(collection(db, 'warranties'), orderBy('expiryDate', 'asc'));
@@ -52,9 +54,9 @@ export default function WarrantyList({ onEdit }: WarrantyListProps) {
   }, []);
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm('確定要刪除這筆保固資料嗎？')) return;
     try {
       await deleteDoc(doc(db, 'warranties', id));
+      setDeleteConfirm({ isOpen: false, id: null });
     } catch (error) {
       handleFirestoreError(error, OperationType.DELETE, `warranties/${id}`);
     }
@@ -201,7 +203,7 @@ export default function WarrantyList({ onEdit }: WarrantyListProps) {
                             <Edit3 className="w-4 h-4" />
                           </button>
                           <button
-                            onClick={() => w.id && handleDelete(w.id)}
+                            onClick={() => w.id && setDeleteConfirm({ isOpen: true, id: w.id })}
                             className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
                             title="刪除"
                           >
@@ -223,6 +225,14 @@ export default function WarrantyList({ onEdit }: WarrantyListProps) {
           </div>
         )}
       </div>
+
+      <ConfirmModal
+        isOpen={deleteConfirm.isOpen}
+        title="刪除保固資料"
+        message="確定要刪除這筆保固資料嗎？此動作無法復原。"
+        onConfirm={() => deleteConfirm.id && handleDelete(deleteConfirm.id)}
+        onCancel={() => setDeleteConfirm({ isOpen: false, id: null })}
+      />
     </div>
   );
 }

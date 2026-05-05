@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { collection, addDoc, onSnapshot, query, orderBy, deleteDoc, doc, updateDoc, serverTimestamp, where, getDocs, getDoc } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 import LineNotifyModal from './LineNotifyModal';
+import ConfirmModal from './ConfirmModal';
 
 interface Issue {
   id?: string;
@@ -36,6 +37,8 @@ export default function ProjectIssuesModal({ warrantyId, projectName, vendorName
   const [issues, setIssues] = useState<Issue[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; id: string | null }>({ isOpen: false, id: null });
+
   
   // Add/Edit form state
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -180,9 +183,11 @@ export default function ProjectIssuesModal({ warrantyId, projectName, vendorName
   };
 
   const handleDelete = async (id: string | undefined) => {
-    if (!id || !window.confirm('確定要刪除這筆維修紀錄嗎？')) return;
     try {
-      await deleteDoc(doc(db, 'issues', id));
+      if (id) {
+        await deleteDoc(doc(db, 'issues', id));
+      }
+      setDeleteConfirm({ isOpen: false, id: null });
     } catch (error) {
       handleFirestoreError(error, OperationType.DELETE, `issues/${id}`);
     }
@@ -380,7 +385,7 @@ export default function ProjectIssuesModal({ warrantyId, projectName, vendorName
                         <Edit3 className="w-4 h-4" />
                       </button>
                       <button
-                        onClick={() => handleDelete(issue.id)}
+                        onClick={() => issue.id && setDeleteConfirm({ isOpen: true, id: issue.id })}
                         className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -415,6 +420,14 @@ export default function ProjectIssuesModal({ warrantyId, projectName, vendorName
           status={selectedIssue.status}
         />
       )}
+
+      <ConfirmModal
+        isOpen={deleteConfirm.isOpen}
+        title="刪除維修紀錄"
+        message="確定要刪除這筆維修紀錄嗎？此動作無法復原。"
+        onConfirm={() => deleteConfirm.id && handleDelete(deleteConfirm.id)}
+        onCancel={() => setDeleteConfirm({ isOpen: false, id: null })}
+      />
     </div>
   );
 }

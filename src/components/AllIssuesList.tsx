@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
 import ProjectIssuesModal from './ProjectIssuesModal'; // We can reuse the edit form logic, or just make an inline edit here.
 import LineNotifyModal from './LineNotifyModal';
+import ConfirmModal from './ConfirmModal';
 
 interface Issue {
   id: string;
@@ -40,6 +41,8 @@ export default function AllIssuesList() {
   const [editFormData, setEditFormData] = useState<any>({});
   
   const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; id: string | null }>({ isOpen: false, id: null });
+
 
   useEffect(() => {
     // Fetch warranties to map IDs to project names
@@ -77,9 +80,11 @@ export default function AllIssuesList() {
   }, []);
 
   const handleDelete = async (id: string) => {
-    if (!id || !window.confirm('確定要刪除這筆維修紀錄嗎？')) return;
     try {
-      await deleteDoc(doc(db, 'issues', id));
+      if (id) {
+        await deleteDoc(doc(db, 'issues', id));
+      }
+      setDeleteConfirm({ isOpen: false, id: null });
     } catch (error) {
       handleFirestoreError(error, OperationType.DELETE, `issues/${id}`);
     }
@@ -265,7 +270,7 @@ export default function AllIssuesList() {
                     <Edit3 className="w-4 h-4" />
                   </button>
                   <button
-                    onClick={() => handleDelete(issue.id)}
+                    onClick={() => setDeleteConfirm({ isOpen: true, id: issue.id })}
                     className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors border border-transparent hover:border-red-100"
                     title="刪除"
                   >
@@ -371,6 +376,14 @@ export default function AllIssuesList() {
           status={selectedIssue.status}
         />
       )}
+
+      <ConfirmModal
+        isOpen={deleteConfirm.isOpen}
+        title="刪除維修紀錄"
+        message="確定要刪除這筆維修紀錄嗎？此動作無法復原。"
+        onConfirm={() => deleteConfirm.id && handleDelete(deleteConfirm.id)}
+        onCancel={() => setDeleteConfirm({ isOpen: false, id: null })}
+      />
     </div>
   );
 }
