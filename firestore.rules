@@ -31,6 +31,15 @@ service cloud.firestore {
              (data.keys().hasAll(['projectName', 'vendor', 'expiryDate', 'deposit', 'isRefunded', 'hasIssue']) && data.keys().size() >= 6);
     }
 
+    function isValidIssue(data) {
+      return data.issueName is string && data.issueName.size() > 0 && data.issueName.size() <= 200 &&
+             (!data.keys().hasAny(['vendorCompany']) || (data.vendorCompany is string && data.vendorCompany.size() <= 200)) &&
+             (!data.keys().hasAny(['status']) || (data.status is string && data.status in ['未處理', '維修中', '待料中', '已完成'])) &&
+             (!data.keys().hasAny(['vendorReply']) || (data.vendorReply is string && data.vendorReply.size() <= 1000)) &&
+             (!data.keys().hasAny(['estRepairTime']) || (data.estRepairTime is string && data.estRepairTime.size() <= 100)) &&
+             data.warrantyId is string && data.warrantyId.size() <= 128 && data.warrantyId.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
     match /warranties/{warrantyId} {
       allow get: if isValidId(warrantyId);
       allow list: if true; 
@@ -49,6 +58,14 @@ service cloud.firestore {
                       );
       
       allow delete: if isValidId(warrantyId);
+    }
+
+    match /issues/{issueId} {
+      allow get: if isValidId(issueId);
+      allow list: if true;
+      allow create: if isValidId(issueId) && isValidIssue(incoming()) && incoming().createdAt == request.time && incoming().updatedAt == request.time;
+      allow update: if isValidId(issueId) && isValidIssue(incoming()) && incoming().createdAt == existing().createdAt && incoming().updatedAt == request.time;
+      allow delete: if isValidId(issueId);
     }
   }
 }

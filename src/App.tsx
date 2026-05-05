@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { ShieldCheck, LayoutDashboard, Plus, Lock, Github, ExternalLink, Sparkles, Key } from 'lucide-react';
 import WarrantyForm from './components/WarrantyForm';
 import WarrantyList from './components/WarrantyList';
+import AllIssuesList from './components/AllIssuesList';
 import AIImportModal from './components/AIImportModal';
 import ApiKeyModal from './components/ApiKeyModal';
 import { Warranty } from './types';
@@ -12,6 +13,7 @@ export default function App() {
   const [showForm, setShowForm] = useState(false);
   const [showAIModal, setShowAIModal] = useState(false);
   const [showApiKeyModal, setShowApiKeyModal] = useState(false);
+  const [activeView, setActiveView] = useState<'warranties' | 'issues'>('warranties');
 
   const handleEdit = (warranty: Warranty) => {
     setEditingWarranty(warranty);
@@ -46,9 +48,33 @@ export default function App() {
               <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20">
                 <ShieldCheck className="w-6 h-6 text-white" />
               </div>
-              <div>
+              <div className="hidden sm:block">
                 <h1 className="text-xl font-black text-slate-900 tracking-tight leading-none">工程保固系統</h1>
                 <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Warranty Management v2.0</p>
+              </div>
+
+              {/* View Switcher */}
+              <div className="ml-2 sm:ml-6 flex items-center bg-slate-100 p-1 rounded-xl">
+                <button
+                  onClick={() => setActiveView('warranties')}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-bold transition-all ${
+                    activeView === 'warranties' 
+                      ? 'bg-white text-blue-600 shadow-sm' 
+                      : 'text-slate-500 hover:text-slate-700'
+                  }`}
+                >
+                  專案清單
+                </button>
+                <button
+                  onClick={() => setActiveView('issues')}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-bold transition-all ${
+                    activeView === 'issues' 
+                      ? 'bg-white text-blue-600 shadow-sm' 
+                      : 'text-slate-500 hover:text-slate-700'
+                  }`}
+                >
+                  工單管理
+                </button>
               </div>
             </div>
             
@@ -117,13 +143,21 @@ export default function App() {
               <div className="space-y-1">
                 <h2 className="text-2xl font-black text-slate-900 flex items-center gap-2">
                   <LayoutDashboard className="w-6 h-6 text-blue-600" />
-                  工程保固清單
+                  {activeView === 'warranties' ? '工程保固清單' : '全局維修工單'}
                 </h2>
-                <p className="text-slate-400 text-sm">追蹤所有保固案件、維修進度與保證金狀態</p>
+                <p className="text-slate-400 text-sm">
+                  {activeView === 'warranties' 
+                    ? '追蹤所有保固案件、維修進度與保證金狀態' 
+                    : '管理並追蹤所有專案的維修與待料進度'}
+                </p>
               </div>
             </div>
 
-            <WarrantyList onEdit={handleEdit} />
+            {activeView === 'warranties' ? (
+              <WarrantyList onEdit={handleEdit} />
+            ) : (
+              <AllIssuesList />
+            )}
           </div>
         </div>
       </main>

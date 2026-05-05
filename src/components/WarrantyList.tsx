@@ -19,9 +19,11 @@ import {
   Clock, 
   CheckCircle,
   Construction,
-  Building2
+  Building2,
+  Wrench
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import ProjectIssuesModal from './ProjectIssuesModal';
 
 interface WarrantyListProps {
   onEdit: (warranty: Warranty) => void;
@@ -31,6 +33,7 @@ export default function WarrantyList({ onEdit }: WarrantyListProps) {
   const [warranties, setWarranties] = useState<Warranty[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedProjectForIssues, setSelectedProjectForIssues] = useState<{id: string, name: string, vendor: string} | null>(null);
 
   useEffect(() => {
     const q = query(collection(db, 'warranties'), orderBy('expiryDate', 'asc'));
@@ -74,6 +77,17 @@ export default function WarrantyList({ onEdit }: WarrantyListProps) {
 
   return (
     <div className="space-y-6">
+      <AnimatePresence>
+        {selectedProjectForIssues && (
+          <ProjectIssuesModal
+            warrantyId={selectedProjectForIssues.id}
+            projectName={selectedProjectForIssues.name}
+            vendorName={selectedProjectForIssues.vendor}
+            onClose={() => setSelectedProjectForIssues(null)}
+          />
+        )}
+      </AnimatePresence>
+
       {/* 搜尋欄 */}
       <div className="relative group">
         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5 group-focus-within:text-blue-500 transition-colors" />
@@ -171,7 +185,14 @@ export default function WarrantyList({ onEdit }: WarrantyListProps) {
                         )}
                       </td>
                       <td className="p-4">
-                        <div className="flex justify-center items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="flex justify-center items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button
+                            onClick={() => w.id && setSelectedProjectForIssues({ id: w.id, name: w.projectName, vendor: w.vendor })}
+                            className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
+                            title="維修管理"
+                          >
+                            <Wrench className="w-4 h-4" />
+                          </button>
                           <button
                             onClick={() => onEdit(w)}
                             className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
