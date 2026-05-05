@@ -3,6 +3,7 @@ import { X, Plus, Edit3, Trash2, MessageCircle, AlertCircle, CheckCircle, Clock,
 import { motion, AnimatePresence } from 'motion/react';
 import { collection, addDoc, onSnapshot, query, orderBy, deleteDoc, doc, updateDoc, serverTimestamp, where } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../lib/firebase';
+import LineNotifyModal from './LineNotifyModal';
 
 interface Issue {
   id?: string;
@@ -43,6 +44,9 @@ export default function ProjectIssuesModal({ warrantyId, projectName, vendorName
   const [status, setStatus] = useState<Issue['status']>('未處理');
   const [vendorReply, setVendorReply] = useState('');
   const [estRepairTime, setEstRepairTime] = useState('');
+  
+  // Line Notify state
+  const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
 
   useEffect(() => {
     const q = query(
@@ -136,12 +140,7 @@ export default function ProjectIssuesModal({ warrantyId, projectName, vendorName
   };
 
   const notifyLine = (issue: Issue) => {
-    if (!issue.id) return;
-    const baseUrl = window.location.origin + window.location.pathname;
-    const vendorLink = `${baseUrl}?issueId=${issue.id}`;
-    const message = `🚧 【維修通知】\n工程：${projectName}\n項目：${issue.issueName}\n狀態：${issue.status}\n廠商：${issue.vendorCompany || '未指定'}\n回覆：${issue.vendorReply || '無'}\n\n廠商您好，請透過此連結回報處理進度：\n${vendorLink}`;
-    const url = `https://line.me/R/msg/text/?${encodeURIComponent(message)}`;
-    window.open(url, '_blank');
+    setSelectedIssue(issue);
   };
 
   const markAsRead = async (id: string | undefined) => {
@@ -356,6 +355,17 @@ export default function ProjectIssuesModal({ warrantyId, projectName, vendorName
           )}
         </div>
       </motion.div>
+
+      {selectedIssue && (
+        <LineNotifyModal
+          isOpen={!!selectedIssue}
+          onClose={() => setSelectedIssue(null)}
+          vendorCompany={selectedIssue.vendorCompany}
+          projectName={projectName}
+          issueName={selectedIssue.issueName}
+          status={selectedIssue.status}
+        />
+      )}
     </div>
   );
 }

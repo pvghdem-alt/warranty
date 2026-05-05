@@ -52,11 +52,8 @@ service cloud.firestore {
       
       allow update: if isValidId(warrantyId) &&
                       isValidWarranty(incoming()) &&
-                      incoming().createdAt == existing().createdAt &&
-                      incoming().updatedAt == request.time &&
-                      (
-                        incoming().diff(existing()).affectedKeys().hasOnly(['projectName', 'vendor', 'expiryDate', 'deposit', 'issueRemark', 'warrantyScope', 'isRefunded', 'hasIssue', 'updatedAt'])
-                      );
+                      (!existing().keys().hasAny(['createdAt']) || incoming().createdAt == existing().createdAt) &&
+                      (!incoming().keys().hasAny(['updatedAt']) || incoming().updatedAt == request.time);
       
       allow delete: if isValidId(warrantyId);
     }
@@ -65,7 +62,9 @@ service cloud.firestore {
       allow get: if isValidId(issueId);
       allow list: if true;
       allow create: if isValidId(issueId) && isValidIssue(incoming()) && incoming().createdAt == request.time && incoming().updatedAt == request.time;
-      allow update: if isValidId(issueId) && isValidIssue(incoming()) && incoming().createdAt == existing().createdAt && incoming().updatedAt == request.time;
+      allow update: if isValidId(issueId) && isValidIssue(incoming()) && 
+                      (!existing().keys().hasAny(['createdAt']) || incoming().createdAt == existing().createdAt) && 
+                      (!incoming().keys().hasAny(['updatedAt']) || incoming().updatedAt == request.time);
       allow delete: if isValidId(issueId);
     }
   }

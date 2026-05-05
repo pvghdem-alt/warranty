@@ -5,6 +5,7 @@ import { Edit3, Trash2, Search, MessageCircle, AlertCircle, Clock, Construction,
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
 import ProjectIssuesModal from './ProjectIssuesModal'; // We can reuse the edit form logic, or just make an inline edit here.
+import LineNotifyModal from './LineNotifyModal';
 
 interface Issue {
   id: string;
@@ -31,11 +32,14 @@ export default function AllIssuesList() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'all'|'未處理'|'維修中'|'待料中'|'已完成'>('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedProjectId, setSelectedProjectId] = useState<string>('all');
   // Warranty projects map
   const [projectsMap, setProjectsMap] = useState<Record<string, string>>({});
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editFormData, setEditFormData] = useState<any>({});
+  
+  const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
 
   useEffect(() => {
     // Fetch warranties to map IDs to project names
@@ -122,17 +126,13 @@ export default function AllIssuesList() {
   };
 
   const notifyLine = (issue: Issue) => {
-    if (!issue.id) return;
-    const baseUrl = window.location.origin + window.location.pathname;
-    const vendorLink = `${baseUrl}?issueId=${issue.id}`;
-    const projectName = projectsMap[issue.warrantyId] || '未知專案';
-    const message = `🚧 【維修通知】\n工程：${projectName}\n項目：${issue.issueName}\n狀態：${issue.status}\n廠商：${issue.vendorCompany || '未指定'}\n回覆：${issue.vendorReply || '無'}\n\n廠商您好，請透過此連結回報處理進度：\n${vendorLink}`;
-    const url = `https://line.me/R/msg/text/?${encodeURIComponent(message)}`;
-    window.open(url, '_blank');
+    setSelectedIssue(issue);
   };
 
   const filteredIssues = issues.filter(i => {
     if (activeTab !== 'all' && i.status !== activeTab) return false;
+    if (selectedProjectId !== 'all' && i.warrantyId !== selectedProjectId) return false;
+    
     if (searchTerm) {
       const lower = searchTerm.toLowerCase();
       const projName = projectsMap[i.warrantyId] || '';
@@ -182,15 +182,32 @@ export default function AllIssuesList() {
         ))}
       </div>
 
-      <div className="relative group">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5 group-focus-within:text-slate-500 transition-colors" />
-        <input
-          type="text"
-          placeholder="搜尋項目名稱、工程、廠商或回覆..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full pl-12 pr-4 py-4 bg-white border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-slate-500/5 focus:border-slate-500 transition-all shadow-sm"
-        />
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative group flex-1">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5 group-focus-within:text-slate-500 transition-colors" />
+          <input
+            type="text"
+            placeholder="搜尋項目名稱、工程、廠商或回覆..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-12 pr-4 py-4 bg-white border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-slate-500/5 focus:border-slate-500 transition-all shadow-sm"
+          />
+        </div>
+        <div className="w-full sm:w-64 relative">
+          <select
+            value={selectedProjectId}
+            onChange={(e) => setSelectedProjectId(e.target.value)}
+            className="w-full h-full px-4 py-4 bg-white border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-slate-500/5 focus:border-slate-500 transition-all shadow-sm appearance-none text-slate-700 font-bold"
+          >
+            <option value="all">所有工程案</option>
+            {Object.entries(projectsMap).map(([id, name]) => (
+              <option key={id} value={id}>{name}</option>
+            ))}
+          </select>
+          <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+            <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+          </div>
+        </div>
       </div>
 
       <div className="space-y-4">
@@ -343,6 +360,17 @@ export default function AllIssuesList() {
           </div>
         )}
       </div>
+
+      {selectedIssue && (
+        <LineNotifyModal
+          isOpen={!!selectedIssue}
+          onClose={() => setSelectedIssue(null)}
+          vendorCompany={selectedIssue.vendorCompany}
+          projectName={projectsMap[selectedIssue.warrantyId] || '未知專案'}
+          issueName={selectedIssue.issueName}
+          status={selectedIssue.status}
+        />
+      )}
     </div>
   );
 }

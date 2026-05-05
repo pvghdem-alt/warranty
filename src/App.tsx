@@ -5,7 +5,7 @@ import WarrantyList from './components/WarrantyList';
 import AllIssuesList from './components/AllIssuesList';
 import AIImportModal from './components/AIImportModal';
 import ApiKeyModal from './components/ApiKeyModal';
-import VendorReplyPage from './components/VendorReplyPage';
+import VendorDashboard from './components/VendorDashboard';
 import { Warranty } from './types';
 import { motion, AnimatePresence } from 'motion/react';
 import { collection, onSnapshot, query, where } from 'firebase/firestore';
@@ -20,20 +20,20 @@ export default function App() {
   const [unreadIssuesCount, setUnreadIssuesCount] = useState(0);
 
   const params = new URLSearchParams(window.location.search);
-  const isVendorPage = params.has('issueId');
-  const vendorIssueId = params.get('issueId');
+  const isVendorDashboard = params.has('vendor');
+  const vendorName = params.get('vendor');
 
   useEffect(() => {
-    if (isVendorPage) return; // Vendor page doesn't need unread notification badge
+    if (isVendorDashboard) return; // Vendor page doesn't need unread notification badge
     const q = query(collection(db, 'issues'), where('hasUnreadReply', '==', true));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       setUnreadIssuesCount(snapshot.docs.length);
     });
     return () => unsubscribe();
-  }, [isVendorPage]);
+  }, [isVendorDashboard]);
 
-  if (isVendorPage && vendorIssueId) {
-    return <VendorReplyPage issueId={vendorIssueId} />;
+  if (isVendorDashboard && vendorName) {
+    return <VendorDashboard vendorName={vendorName} />;
   }
 
   const handleEdit = (warranty: Warranty) => {
