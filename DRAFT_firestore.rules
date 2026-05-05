@@ -1,0 +1,58 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Since it's a "No Login" app as requested by the user, we allow public access 
+    // for this specific demo/version, but with EXTREMELY strict validation.
+    // In a real production app, we would use request.auth.
+    
+    function isValidWarranty(data) {
+      return data.projectName is string && data.projectName.size() > 0 && data.projectName.size() <= 200 &&
+             data.vendor is string && data.vendor.size() <= 200 &&
+             data.expiryDate is timestamp &&
+             data.deposit is number && data.deposit >= 0 &&
+             data.issueRemark is string && data.issueRemark.size() <= 1000 &&
+             data.isRefunded is bool &&
+             data.hasIssue is bool &&
+             (data.keys().hasAll(['projectName', 'vendor', 'expiryDate', 'deposit', 'isRefunded', 'hasIssue']) && data.keys().size() >= 6);
+    }
+
+    match /warranties/{warrantyId} {
+      allow get: if isValidId(warrantyId);
+      allow list: if true; // Public list for this version
+      
+      allow create: if isValidId(warrantyId) && 
+                      isValidWarranty(incoming()) &&
+                      incoming().createdAt == request.time &&
+                      incoming().updatedAt == request.time;
+      
+      allow update: if isValidId(warrantyId) &&
+                      isValidWarranty(incoming()) &&
+                      incoming().createdAt == existing().createdAt && // Immutable
+                      incoming().updatedAt == request.time &&
+                      (
+                        // Allow all fields to be updated for now as requested by user
+                        incoming().diff(existing()).affectedKeys().hasAny(['projectName', 'vendor', 'expiryDate', 'deposit', 'issueRemark', 'isRefunded', 'hasIssue', 'updatedAt'])
+                      );
+      
+      allow delete: if isValidId(warrantyId);
+    }
+  }
+}

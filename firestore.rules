@@ -1,0 +1,54 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidWarranty(data) {
+      return data.projectName is string && data.projectName.size() > 0 && data.projectName.size() <= 200 &&
+             data.vendor is string && data.vendor.size() <= 200 &&
+             data.expiryDate is timestamp &&
+             data.deposit is number && data.deposit >= 0 &&
+             data.issueRemark is string && data.issueRemark.size() <= 1000 &&
+             (!data.keys().hasAny(['warrantyScope']) || (data.warrantyScope is string && data.warrantyScope.size() <= 2000)) &&
+             data.isRefunded is bool &&
+             data.hasIssue is bool &&
+             (data.keys().hasAll(['projectName', 'vendor', 'expiryDate', 'deposit', 'isRefunded', 'hasIssue']) && data.keys().size() >= 6);
+    }
+
+    match /warranties/{warrantyId} {
+      allow get: if isValidId(warrantyId);
+      allow list: if true; 
+      
+      allow create: if isValidId(warrantyId) && 
+                      isValidWarranty(incoming()) &&
+                      incoming().createdAt == request.time &&
+                      incoming().updatedAt == request.time;
+      
+      allow update: if isValidId(warrantyId) &&
+                      isValidWarranty(incoming()) &&
+                      incoming().createdAt == existing().createdAt &&
+                      incoming().updatedAt == request.time &&
+                      (
+                        incoming().diff(existing()).affectedKeys().hasOnly(['projectName', 'vendor', 'expiryDate', 'deposit', 'issueRemark', 'warrantyScope', 'isRefunded', 'hasIssue', 'updatedAt'])
+                      );
+      
+      allow delete: if isValidId(warrantyId);
+    }
+  }
+}

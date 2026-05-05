@@ -1,0 +1,66 @@
+{
+  "entities": {
+    "Warranty": {
+      "title": "Warranty",
+      "description": "Represents an engineering warranty/guarantee entry.",
+      "type": "object",
+      "properties": {
+        "projectName": {
+          "type": "string",
+          "description": "The name of the engineering or procurement project."
+        },
+        "vendor": {
+          "type": "string",
+          "description": "The vendor/contractor providing the warranty."
+        },
+        "expiryDate": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The expiration date of the warranty."
+        },
+        "deposit": {
+          "type": "number",
+          "description": "The amount of the warranty deposit/guarantee money."
+        },
+        "issueRemark": {
+          "type": "string",
+          "description": "Notes regarding maintenance issues or repair progress."
+        },
+        "warrantyScope": {
+            "type": "string",
+            "description": "The specific scope of the warranty coverage extracted from documents."
+        },
+        "isRefunded": {
+          "type": "boolean",
+          "description": "Whether the deposit has been refunded."
+        },
+        "hasIssue": {
+          "type": "boolean",
+          "description": "Whether there is an active repair/maintenance issue."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "projectName",
+        "vendor",
+        "expiryDate",
+        "deposit",
+        "isRefunded",
+        "hasIssue"
+      ]
+    }
+  },
+  "firestore": {
+    "/warranties/{warrantyId}": {
+      "schema": "Warranty",
+      "description": "Collection of engineering warranty records."
+    }
+  }
+}
