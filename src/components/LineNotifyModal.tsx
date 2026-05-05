@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { X, MessageCircle, Send } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { doc, getDoc, setDoc, collection, query, where, getDocs } from 'firebase/firestore';
+import { db } from '../lib/firebase';
 
 interface LineNotifyModalProps {
   isOpen: boolean;
@@ -19,24 +21,72 @@ export default function LineNotifyModal({
   issueName, 
   status 
 }: LineNotifyModalProps) {
-  const [token, setToken] = useState(localStorage.getItem('line_channel_access_token') || '');
   const [vendorLineId, setVendorLineId] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [recentUsers, setRecentUsers] = useState<{userId: string; timestamp: number; message: string; displayName?: string}[]>([]);
   const [showRecent, setShowRecent] = useState(false);
+  const [messageText, setMessageText] = useState('');
 
   useEffect(() => {
-    // Try to load a saved line id for this vendor if we have a mapping logic
-    const savedMapping = localStorage.getItem('vendor_line_ids');
-    if (savedMapping) {
-      const map = JSON.parse(savedMapping);
-      if (map[vendorCompany]) {
-        setVendorLineId(map[vendorCompany]);
+    const loadVendorData = async () => {
+      try {
+        if (!vendorCompany) return;
+        
+        // Load LINE ID
+        const docRef = doc(db, 'vendorSettings', vendorCompany);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists() && docSnap.data().lineUserId) {
+          setVendorLineId(docSnap.data().lineUserId);
+        } else {
+          // Fallback to local storage if not in firebase
+          const map = JSON.parse(localStorage.getItem('vendor_line_ids') || '{}');
+          if (map[vendorCompany]) {
+            setVendorLineId(map[vendorCompany]);
+          }
+        }
+        
+        // Load unfinished issues to compute message
+        const q = query(collection(db, 'issues'), where('vendorCompany', '==', vendorCompany));
+        const issueSnaps = await getDocs(q);
+        let unfinishedIssues: any[] = [];
+        issueSnaps.forEach(d => {
+          const data = d.data();
+          if (data.status !== '已完成') {
+            unfinishedIssues.push({ ...data, id: d.id, createdAt: data.createdAt?.toDate?.() || new Date() });
+          }
+        });
+        
+        const today = new Date();
+        const listStr = unfinishedIssues.map((issue, idx) => {
+           const d = issue.createdAt ? new Date(issue.createdAt) : today;
+           const days = Math.floor((today.getTime() - d.getTime()) / (1000 * 3600 * 24));
+           return `${idx+1}. 【${issue.issueName}】 - 狀態: ${issue.status} (已等待 ${days} 天)`;
+        }).join('\n');
+
+        const baseUrl = window.location.origin + window.location.pathname;
+        const vendorDashboardLink = `${baseUrl}?vendor=${encodeURIComponent(vendorCompany)}`;
+        
+        let msg = `🚧 【維修通知】\n工程：${projectName}\n項目：${issueName}\n狀態：${status}\n廠商：${vendorCompany || '未指定'}\n\n`;
+        if (unfinishedIssues.length > 0) {
+          msg += `⚠️ 目前您共有 ${unfinishedIssues.length} 張工單尚未處理：\n${listStr}\n\n`;
+        }
+        msg += `廠商您好，這是您的專屬維修管理列表頁面，請點擊連結查看並更新所有工單狀態：\n${vendorDashboardLink}`;
+        
+        setMessageText(msg);
+
+      } catch (e) {
+        console.error("Failed to load vendor data", e);
       }
+    };
+    
+    if (isOpen) {
+      loadVendorData();
+      setError('');
+      setSuccess(false);
     }
-  }, [vendorCompany, isOpen]);
+  }, [vendorCompany, isOpen, projectName, issueName, status]);
 
   const fetchRecentUsers = async () => {
     try {
@@ -53,41 +103,33 @@ export default function LineNotifyModal({
   useEffect(() => {
     if (showRecent) {
       fetchRecentUsers();
-      // Polling every 3 seconds while open
       const interval = setInterval(fetchRecentUsers, 3000);
       return () => clearInterval(interval);
     }
   }, [showRecent]);
 
-  const baseUrl = window.location.origin + window.location.pathname;
-  const vendorDashboardLink = `${baseUrl}?vendor=${encodeURIComponent(vendorCompany)}`;
-  
-  const messageText = `🚧 【維修通知】\n工程：${projectName}\n項目：${issueName}\n狀態：${status}\n廠商：${vendorCompany || '未指定'}\n\n廠商您好，這是您的專屬維修管理列表頁面，請點擊連結查看並更新所有工單狀態：\n${vendorDashboardLink}`;
-
   const handleSend = async () => {
-    if (!token || !vendorLineId) {
-      setError('請填寫 Channel Access Token 與廠商 LINE ID');
+    if (!vendorLineId) {
+      setError('請填寫廠商 LINE ID');
       return;
     }
     
     setLoading(true);
     setError('');
     
-    // Save token and mapping
-    localStorage.setItem('line_channel_access_token', token);
-    const savedMapping = localStorage.getItem('vendor_line_ids');
-    const map = savedMapping ? JSON.parse(savedMapping) : {};
-    map[vendorCompany] = vendorLineId;
-    localStorage.setItem('vendor_line_ids', JSON.stringify(map));
-
     try {
+      // Save mapping to Firebase and localStorage
+      if (vendorCompany) {
+        await setDoc(doc(db, 'vendorSettings', vendorCompany), { lineUserId: vendorLineId }, { merge: true });
+        const map = JSON.parse(localStorage.getItem('vendor_line_ids') || '{}');
+        map[vendorCompany] = vendorLineId;
+        localStorage.setItem('vendor_line_ids', JSON.stringify(map));
+      }
+
       const response = await fetch('/api/line/push', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          channelAccessToken: token,
           to: vendorLineId,
           messages: [{ type: 'text', text: messageText }]
         })
@@ -108,7 +150,7 @@ export default function LineNotifyModal({
       if (errorMsg.includes("The property, 'to', in the request body is invalid")) {
         errorMsg = "錯誤：廠商的 LINE User ID 格式無效。請確保它是以「U」開頭的 33 碼字串 (不能只輸入帳號)。";
       } else if (errorMsg.includes("Invalid channel access token")) {
-        errorMsg = "錯誤：LINE 頻道權杖 (Channel Access Token) 無效，請檢查是否填寫正確。";
+        errorMsg = "錯誤：LINE 頻道權杖 (Channel Access Token) 無效，系統設定可能有誤。";
       }
       setError(errorMsg);
     } finally {
@@ -155,17 +197,6 @@ export default function LineNotifyModal({
                 </div>
               )}
               
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-500">LINE 頻道存取權杖 (Channel Access Token)</label>
-                <input
-                  type="password"
-                  value={token}
-                  onChange={e => setToken(e.target.value)}
-                  placeholder="輸入您的 LINE Channel Access Token..."
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-green-500/20 focus:border-green-500 outline-none transition-all text-sm"
-                />
-              </div>
-
               <div className="space-y-1">
                 <div className="flex justify-between items-end">
                   <label className="text-xs font-bold text-slate-500">廠商 LINE User ID ({vendorCompany})</label>

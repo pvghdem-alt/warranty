@@ -67,5 +67,9 @@ service cloud.firestore {
                       (!incoming().keys().hasAny(['updatedAt']) || incoming().updatedAt == request.time);
       allow delete: if isValidId(issueId);
     }
+    match /vendorSettings/{vendorName} {
+      allow read: if true;
+      allow write: if true;
+    }
   }
 }

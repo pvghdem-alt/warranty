@@ -53,7 +53,8 @@ async function startServer() {
   // API Route for LINE Push
   app.post('/api/line/push', async (req, res) => {
     try {
-      const { to, messages, channelAccessToken } = req.body;
+      const { to, messages } = req.body;
+      const channelAccessToken = req.body.channelAccessToken || process.env.LINE_CHANNEL_ACCESS_TOKEN || 'TrqbY0JDZEkRhcdSyH9U00qn0P/ppc6ATGluE4h1QXG4+m73U3quIDZk1anYA+EOn7Nrbh8veUHLwGY0VP5mpGp4Py6MQdqhKsU5S89dpNqW64SL9mNi0HCGIGXIwPXT93IN2UK2NsUirL9h0bxOwQdB04t89/1O/w1cDnyilFU=';
       const response = await fetch('https://api.line.me/v2/bot/message/push', {
         method: 'POST',
         headers: {
