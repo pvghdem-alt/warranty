@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 import { ShieldCheck, CheckCircle2 } from 'lucide-react';
 import { motion } from 'motion/react';
@@ -49,7 +49,7 @@ export default function VendorReplyPage({ issueId }: VendorReplyPageProps) {
         vendorReply,
         estRepairTime,
         hasUnreadReply: true,
-        updatedAt: new Date()
+        updatedAt: serverTimestamp()
       });
       setSubmitted(true);
     } catch (error) {

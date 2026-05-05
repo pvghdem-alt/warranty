@@ -147,7 +147,10 @@ export default function ProjectIssuesModal({ warrantyId, projectName, vendorName
   const markAsRead = async (id: string | undefined) => {
     if (!id) return;
     try {
-      await updateDoc(doc(db, 'issues', id), { hasUnreadReply: false });
+      await updateDoc(doc(db, 'issues', id), { 
+        hasUnreadReply: false,
+        updatedAt: serverTimestamp()
+      });
     } catch (error) {
       console.error(error);
     }

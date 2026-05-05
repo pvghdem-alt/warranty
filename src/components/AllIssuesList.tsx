@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, onSnapshot, query, orderBy, getDocs, doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy, getDocs, doc, updateDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 import { Edit3, Trash2, Search, MessageCircle, AlertCircle, Clock, Construction, Wrench } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -83,7 +83,10 @@ export default function AllIssuesList() {
 
   const markAsRead = async (id: string) => {
     try {
-      await updateDoc(doc(db, 'issues', id), { hasUnreadReply: false });
+      await updateDoc(doc(db, 'issues', id), { 
+        hasUnreadReply: false,
+        updatedAt: serverTimestamp()
+      });
     } catch (error) {
       console.error(error);
     }
@@ -110,7 +113,7 @@ export default function AllIssuesList() {
     try {
       await updateDoc(doc(db, 'issues', id), {
         ...editFormData,
-        updatedAt: new Date()
+        updatedAt: serverTimestamp()
       });
       setEditingId(null);
     } catch (error) {
