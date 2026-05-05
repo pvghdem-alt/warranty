@@ -37,6 +37,7 @@ service cloud.firestore {
              (!data.keys().hasAny(['status']) || (data.status is string && data.status in ['未處理', '維修中', '待料中', '已完成'])) &&
              (!data.keys().hasAny(['vendorReply']) || (data.vendorReply is string && data.vendorReply.size() <= 1000)) &&
              (!data.keys().hasAny(['estRepairTime']) || (data.estRepairTime is string && data.estRepairTime.size() <= 100)) &&
+             (!data.keys().hasAny(['hasUnreadReply']) || (data.hasUnreadReply is bool)) &&
              data.warrantyId is string && data.warrantyId.size() <= 128 && data.warrantyId.matches('^[a-zA-Z0-9_\\-]+$');
     }
 

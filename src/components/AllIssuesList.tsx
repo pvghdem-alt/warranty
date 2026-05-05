@@ -16,6 +16,7 @@ interface Issue {
   createdAt?: any;
   updatedAt?: any;
   warrantyId: string;
+  hasUnreadReply?: boolean;
 }
 
 const statusColors = {
@@ -80,6 +81,14 @@ export default function AllIssuesList() {
     }
   };
 
+  const markAsRead = async (id: string) => {
+    try {
+      await updateDoc(doc(db, 'issues', id), { hasUnreadReply: false });
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
   const handleEdit = (issue: Issue) => {
     if (editingId === issue.id) {
       setEditingId(null);
@@ -91,6 +100,9 @@ export default function AllIssuesList() {
         estRepairTime: issue.estRepairTime || '',
         vendorCompany: issue.vendorCompany || ''
       });
+      if (issue.hasUnreadReply) {
+        markAsRead(issue.id);
+      }
     }
   };
 
@@ -107,8 +119,11 @@ export default function AllIssuesList() {
   };
 
   const notifyLine = (issue: Issue) => {
+    if (!issue.id) return;
+    const baseUrl = window.location.origin + window.location.pathname;
+    const vendorLink = `${baseUrl}?issueId=${issue.id}`;
     const projectName = projectsMap[issue.warrantyId] || '未知專案';
-    const message = `🚧 【維修通知】\n工程：${projectName}\n項目：${issue.issueName}\n狀態：${issue.status}\n廠商：${issue.vendorCompany || '未指定'}\n回覆：${issue.vendorReply || '無'}`;
+    const message = `🚧 【維修通知】\n工程：${projectName}\n項目：${issue.issueName}\n狀態：${issue.status}\n廠商：${issue.vendorCompany || '未指定'}\n回覆：${issue.vendorReply || '無'}\n\n廠商您好，請透過此連結回報處理進度：\n${vendorLink}`;
     const url = `https://line.me/R/msg/text/?${encodeURIComponent(message)}`;
     window.open(url, '_blank');
   };
@@ -189,6 +204,11 @@ export default function AllIssuesList() {
                     <span className={cn("px-2 py-0.5 text-[10px] font-bold rounded border", statusColors[issue.status])}>
                       {issue.status}
                     </span>
+                    {issue.hasUnreadReply && (
+                      <span className="px-2 py-0.5 text-[10px] font-bold rounded border bg-red-100 text-red-700 border-red-200 animate-pulse">
+                        新回覆
+                      </span>
+                    )}
                     <span className="text-[10px] text-slate-400 bg-slate-100 px-2 py-0.5 rounded font-mono">
                       {projName}
                     </span>

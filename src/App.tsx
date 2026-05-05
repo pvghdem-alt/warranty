@@ -1,12 +1,15 @@
-import React, { useState } from 'react';
-import { ShieldCheck, LayoutDashboard, Plus, Lock, Github, ExternalLink, Sparkles, Key } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ShieldCheck, LayoutDashboard, Plus, Lock, Github, ExternalLink, Sparkles, Key, Bell } from 'lucide-react';
 import WarrantyForm from './components/WarrantyForm';
 import WarrantyList from './components/WarrantyList';
 import AllIssuesList from './components/AllIssuesList';
 import AIImportModal from './components/AIImportModal';
 import ApiKeyModal from './components/ApiKeyModal';
+import VendorReplyPage from './components/VendorReplyPage';
 import { Warranty } from './types';
 import { motion, AnimatePresence } from 'motion/react';
+import { collection, onSnapshot, query, where } from 'firebase/firestore';
+import { db } from './lib/firebase';
 
 export default function App() {
   const [editingWarranty, setEditingWarranty] = useState<Warranty | null>(null);
@@ -14,6 +17,24 @@ export default function App() {
   const [showAIModal, setShowAIModal] = useState(false);
   const [showApiKeyModal, setShowApiKeyModal] = useState(false);
   const [activeView, setActiveView] = useState<'warranties' | 'issues'>('warranties');
+  const [unreadIssuesCount, setUnreadIssuesCount] = useState(0);
+
+  const params = new URLSearchParams(window.location.search);
+  const isVendorPage = params.has('issueId');
+  const vendorIssueId = params.get('issueId');
+
+  useEffect(() => {
+    if (isVendorPage) return; // Vendor page doesn't need unread notification badge
+    const q = query(collection(db, 'issues'), where('hasUnreadReply', '==', true));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      setUnreadIssuesCount(snapshot.docs.length);
+    });
+    return () => unsubscribe();
+  }, [isVendorPage]);
+
+  if (isVendorPage && vendorIssueId) {
+    return <VendorReplyPage issueId={vendorIssueId} />;
+  }
 
   const handleEdit = (warranty: Warranty) => {
     setEditingWarranty(warranty);
@@ -67,13 +88,18 @@ export default function App() {
                 </button>
                 <button
                   onClick={() => setActiveView('issues')}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-bold transition-all ${
+                  className={`relative px-3 py-1.5 rounded-lg text-sm font-bold transition-all ${
                     activeView === 'issues' 
                       ? 'bg-white text-blue-600 shadow-sm' 
                       : 'text-slate-500 hover:text-slate-700'
                   }`}
                 >
                   工單管理
+                  {unreadIssuesCount > 0 && (
+                    <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white shadow-sm ring-2 ring-slate-100">
+                      {unreadIssuesCount > 99 ? '99+' : unreadIssuesCount}
+                    </span>
+                  )}
                 </button>
               </div>
             </div>

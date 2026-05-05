@@ -14,6 +14,7 @@ interface Issue {
   createdAt?: any;
   updatedAt?: any;
   warrantyId: string;
+  hasUnreadReply?: boolean;
 }
 
 interface ProjectIssuesModalProps {
@@ -119,6 +120,10 @@ export default function ProjectIssuesModal({ warrantyId, projectName, vendorName
     setVendorReply(issue.vendorReply || '');
     setEstRepairTime(issue.estRepairTime || '');
     setShowAddForm(true);
+    
+    if (issue.hasUnreadReply && issue.id) {
+      markAsRead(issue.id);
+    }
   };
 
   const handleDelete = async (id: string | undefined) => {
@@ -131,11 +136,21 @@ export default function ProjectIssuesModal({ warrantyId, projectName, vendorName
   };
 
   const notifyLine = (issue: Issue) => {
-    // This is a placeholder for LINE Notify integration. 
-    // Usually, you either open a LINE Share URL or make a POST request to a backend that hits LINE API.
-    const message = `🚧 【維修通知】\n工程：${projectName}\n項目：${issue.issueName}\n狀態：${issue.status}\n廠商：${issue.vendorCompany || '未指定'}\n回覆：${issue.vendorReply || '無'}`;
+    if (!issue.id) return;
+    const baseUrl = window.location.origin + window.location.pathname;
+    const vendorLink = `${baseUrl}?issueId=${issue.id}`;
+    const message = `🚧 【維修通知】\n工程：${projectName}\n項目：${issue.issueName}\n狀態：${issue.status}\n廠商：${issue.vendorCompany || '未指定'}\n回覆：${issue.vendorReply || '無'}\n\n廠商您好，請透過此連結回報處理進度：\n${vendorLink}`;
     const url = `https://line.me/R/msg/text/?${encodeURIComponent(message)}`;
     window.open(url, '_blank');
+  };
+
+  const markAsRead = async (id: string | undefined) => {
+    if (!id) return;
+    try {
+      await updateDoc(doc(db, 'issues', id), { hasUnreadReply: false });
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   return (
@@ -283,6 +298,11 @@ export default function ProjectIssuesModal({ warrantyId, projectName, vendorName
                         <span className={`px-2 py-0.5 text-[10px] font-bold rounded border ${statusColors[issue.status]}`}>
                           {issue.status}
                         </span>
+                        {issue.hasUnreadReply && (
+                          <span className="px-2 py-0.5 text-[10px] font-bold rounded border bg-red-100 text-red-700 border-red-200 animate-pulse">
+                            新回覆
+                          </span>
+                        )}
                         {issue.createdAt && (
                           <span className="text-[10px] text-slate-400 font-medium">
                             {issue.createdAt.toDate?.().toLocaleDateString('zh-TW')}
