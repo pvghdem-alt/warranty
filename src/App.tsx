@@ -1,17 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { ShieldCheck, LayoutDashboard, Plus, Lock, Github, ExternalLink, Sparkles, Key, Bell } from 'lucide-react';
+import { ShieldCheck, LayoutDashboard, Plus, Lock, Github, ExternalLink, Sparkles, Key, Bell, LogOut } from 'lucide-react';
 import WarrantyForm from './components/WarrantyForm';
 import WarrantyList from './components/WarrantyList';
 import AllIssuesList from './components/AllIssuesList';
 import AIImportModal from './components/AIImportModal';
 import ApiKeyModal from './components/ApiKeyModal';
 import VendorDashboard from './components/VendorDashboard';
+import LoginPage from './components/LoginPage';
 import { Warranty } from './types';
 import { motion, AnimatePresence } from 'motion/react';
 import { collection, onSnapshot, query, where } from 'firebase/firestore';
-import { db } from './lib/firebase';
+import { db, auth } from './lib/firebase';
+import { onAuthStateChanged, signOut, User } from 'firebase/auth';
 
 export default function App() {
+  const [user, setUser] = useState<User | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
+
   const [editingWarranty, setEditingWarranty] = useState<Warranty | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [showAIModal, setShowAIModal] = useState(false);
@@ -24,17 +29,46 @@ export default function App() {
   const vendorName = params.get('vendor');
 
   useEffect(() => {
+    const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      setAuthLoading(false);
+    });
+    return () => unsubscribeAuth();
+  }, []);
+
+  useEffect(() => {
     if (isVendorDashboard) return; // Vendor page doesn't need unread notification badge
+    if (!user) return; // Only fetch if logged in
     const q = query(collection(db, 'issues'), where('hasUnreadReply', '==', true));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       setUnreadIssuesCount(snapshot.docs.length);
     });
     return () => unsubscribe();
-  }, [isVendorDashboard]);
+  }, [isVendorDashboard, user]);
 
   if (isVendorDashboard && vendorName) {
     return <VendorDashboard vendorName={vendorName} />;
   }
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-blue-500/30 border-t-blue-600 rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <LoginPage />;
+  }
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+    } catch (e) {
+      console.error('Logout error', e);
+    }
+  };
 
   const handleEdit = (warranty: Warranty) => {
     setEditingWarranty(warranty);
@@ -105,8 +139,8 @@ export default function App() {
             </div>
             
             <div className="flex items-center gap-2 sm:gap-4">
-              <div className="hidden lg:flex items-center gap-1 px-3 py-1 bg-slate-100 rounded-full text-slate-500 text-xs font-bold">
-                <Lock className="w-3 h-3" /> 免登入版
+              <div className="hidden lg:flex items-center gap-1 px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-bold">
+                <Lock className="w-3 h-3" /> 已登入
               </div>
 
               <motion.button
@@ -119,6 +153,16 @@ export default function App() {
                 <Key className="w-4 h-4" />
               </motion.button>
               
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={handleLogout}
+                className="bg-red-50 hover:bg-red-100 text-red-600 p-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-all"
+                title="登出系統"
+              >
+                <LogOut className="w-4 h-4" />
+              </motion.button>
+
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}

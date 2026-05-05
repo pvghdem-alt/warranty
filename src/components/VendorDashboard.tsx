@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, where, onSnapshot, getDocs, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, getDocs, doc, updateDoc, serverTimestamp, getDoc } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 import { ShieldCheck, CheckCircle2, AlertCircle, Clock, Construction } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -86,6 +86,31 @@ export default function VendorDashboard({ vendorName }: VendorDashboardProps) {
     }
   };
 
+  const notifyVendorOfUpdate = async (issue: Issue) => {
+    try {
+      const docRef = doc(db, 'vendorSettings', vendorName);
+      const docSnap = await getDoc(docRef);
+      if (!docSnap.exists()) return;
+      
+      const lineUserId = docSnap.data().lineUserId;
+      if (!lineUserId) return;
+
+      const projectName = projectsMap[issue.warrantyId] || '未知專案';
+      const messageText = `✅ 【工單狀態更新】\n專案：${projectName}\n項目：${issue.issueName}\n\n狀態已更新為：${status}\n回覆內容：${vendorReply || '無'}\n預計完成時間：${estRepairTime || '無'}`;
+
+      fetch('/api/line/push', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: lineUserId,
+          messages: [{ type: 'text', text: messageText }]
+        })
+      });
+    } catch (err) {
+      console.error("Auto notify error", err);
+    }
+  };
+
   const handleUpdate = async (id: string, e: React.FormEvent) => {
     e.preventDefault();
     setUpdating(true);
@@ -97,6 +122,12 @@ export default function VendorDashboard({ vendorName }: VendorDashboardProps) {
         hasUnreadReply: true,
         updatedAt: serverTimestamp()
       });
+      
+      const updatedIssue = issues.find(i => i.id === id);
+      if (updatedIssue) {
+        setTimeout(() => notifyVendorOfUpdate(updatedIssue), 500);
+      }
+
       setEditingId(null);
     } catch (error) {
       handleFirestoreError(error, OperationType.UPDATE, `issues`);
