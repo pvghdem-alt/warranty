@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { ShieldCheck, LayoutDashboard, Plus, Lock, Github, ExternalLink, Sparkles } from 'lucide-react';
+import { ShieldCheck, LayoutDashboard, Plus, Lock, Github, ExternalLink, Sparkles, Key } from 'lucide-react';
 import WarrantyForm from './components/WarrantyForm';
 import WarrantyList from './components/WarrantyList';
 import AIImportModal from './components/AIImportModal';
+import ApiKeyModal from './components/ApiKeyModal';
 import { Warranty } from './types';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -10,6 +11,7 @@ export default function App() {
   const [editingWarranty, setEditingWarranty] = useState<Warranty | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [showAIModal, setShowAIModal] = useState(false);
+  const [showApiKeyModal, setShowApiKeyModal] = useState(false);
 
   const handleEdit = (warranty: Warranty) => {
     setEditingWarranty(warranty);
@@ -31,6 +33,9 @@ export default function App() {
             onSuccess={() => setShowAIModal(false)}
           />
         )}
+        {showApiKeyModal && (
+          <ApiKeyModal onClose={() => setShowApiKeyModal(false)} />
+        )}
       </AnimatePresence>
 
       {/* 頂部導航 */}
@@ -48,9 +53,19 @@ export default function App() {
             </div>
             
             <div className="flex items-center gap-2 sm:gap-4">
-              <div className="hidden md:flex items-center gap-1 px-3 py-1 bg-slate-100 rounded-full text-slate-500 text-xs font-bold">
+              <div className="hidden lg:flex items-center gap-1 px-3 py-1 bg-slate-100 rounded-full text-slate-500 text-xs font-bold">
                 <Lock className="w-3 h-3" /> 免登入版
               </div>
+
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setShowApiKeyModal(true)}
+                className="bg-white border border-slate-200 text-slate-500 p-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-all hover:border-slate-300"
+                title="設定 API 金鑰"
+              >
+                <Key className="w-4 h-4" />
+              </motion.button>
               
               <motion.button
                 whileHover={{ scale: 1.05 }}
@@ -113,65 +128,6 @@ export default function App() {
         </div>
       </main>
 
-      {/* 腳本與資訊 */}
-      <footer className="border-t border-slate-200 bg-white py-12 mt-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-8">
-            <div className="space-y-4">
-              <div className="flex items-center gap-2">
-                <ShieldCheck className="w-6 h-6 text-blue-600" />
-                <span className="font-black text-slate-900">工程保固管理系統</span>
-              </div>
-              <p className="text-slate-500 text-sm max-w-xs leading-relaxed">
-                為工程與採購專案設計的保固追蹤工具。支援民國日期、保證金狀態追蹤與即時報修監控。
-              </p>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-12 sm:gap-24">
-              <div className="space-y-4">
-                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest">系統資訊</h4>
-                <ul className="text-sm text-slate-600 space-y-2">
-                  <li className="flex items-center gap-2">
-                    <span className="w-1 h-1 bg-blue-600 rounded-full"></span>
-                    Firebase Firestore 支援
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <span className="w-1 h-1 bg-blue-600 rounded-full"></span>
-                    React 18 + Tailwind
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <span className="w-1 h-1 bg-blue-600 rounded-full"></span>
-                    動畫交乘 React Motion
-                  </li>
-                </ul>
-              </div>
-              <div className="space-y-4">
-                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest">開發工具</h4>
-                <ul className="text-sm text-slate-600 space-y-2">
-                  <li>
-                    <a href="https://ai.studio" className="hover:text-blue-600 transition-colors flex items-center gap-1">
-                      Google AI Studio <ExternalLink className="w-3 h-3" />
-                    </a>
-                  </li>
-                  <li>
-                    <a href="#" className="hover:text-blue-600 transition-colors flex items-center gap-1">
-                      專案原始碼 <Github className="w-3 h-3" />
-                    </a>
-                  </li>
-                </ul>
-              </div>
-            </div>
-          </div>
-          
-          <div className="border-t border-slate-100 mt-12 pt-8 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs font-medium text-slate-400">
-            <p>© 2024 工程保固管理系統. Powered by Google AI Studio.</p>
-            <div className="flex gap-4">
-              <a href="#" className="hover:text-slate-600">隱私權政策</a>
-              <a href="#" className="hover:text-slate-600">服務條款</a>
-            </div>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }

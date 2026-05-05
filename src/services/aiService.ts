@@ -1,6 +1,8 @@
 import { GoogleGenAI, Type } from "@google/genai";
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
+const getApiKey = () => {
+  return localStorage.getItem('GEMINI_API_KEY') || process.env.GEMINI_API_KEY || '';
+};
 
 export interface ExtractedWarranty {
   projectName: string;
@@ -55,6 +57,11 @@ async function fileToGenerativePart(file: File): Promise<{ inlineData: { data: s
 }
 
 export async function analyzeWarrantyDocuments(files: File[]): Promise<ExtractedWarranty> {
+  const apiKey = getApiKey();
+  if (!apiKey) {
+    throw new Error('請先設定 Gemini API 金鑰才能使用 AI 功能。');
+  }
+  const ai = new GoogleGenAI({ apiKey });
   const fileParts = await Promise.all(files.map(fileToGenerativePart));
 
   const prompt = `
