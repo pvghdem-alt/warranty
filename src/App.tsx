@@ -6,6 +6,7 @@ import AllIssuesList from './components/AllIssuesList';
 import AIImportModal from './components/AIImportModal';
 import ApiKeyModal from './components/ApiKeyModal';
 import VendorDashboard from './components/VendorDashboard';
+import VendorManagement from './components/VendorManagement';
 import LoginPage from './components/LoginPage';
 import { Warranty } from './types';
 import { motion, AnimatePresence } from 'motion/react';
@@ -21,7 +22,7 @@ export default function App() {
   const [showForm, setShowForm] = useState(false);
   const [showAIModal, setShowAIModal] = useState(false);
   const [showApiKeyModal, setShowApiKeyModal] = useState(false);
-  const [activeView, setActiveView] = useState<'warranties' | 'issues'>('warranties');
+  const [activeView, setActiveView] = useState<'warranties' | 'issues' | 'vendors'>('warranties');
   const [unreadIssuesCount, setUnreadIssuesCount] = useState(0);
 
   const params = new URLSearchParams(window.location.search);
@@ -135,6 +136,16 @@ export default function App() {
                     </span>
                   )}
                 </button>
+                <button
+                  onClick={() => setActiveView('vendors')}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-bold transition-all ${
+                    activeView === 'vendors' 
+                      ? 'bg-white text-blue-600 shadow-sm' 
+                      : 'text-slate-500 hover:text-slate-700'
+                  }`}
+                >
+                  廠商目錄
+                </button>
               </div>
             </div>
             
@@ -213,20 +224,24 @@ export default function App() {
               <div className="space-y-1">
                 <h2 className="text-2xl font-black text-slate-900 flex items-center gap-2">
                   <LayoutDashboard className="w-6 h-6 text-blue-600" />
-                  {activeView === 'warranties' ? '工程保固清單' : '全局維修工單'}
+                  {activeView === 'warranties' ? '工程保固清單' : activeView === 'issues' ? '全局維修工單' : '廠商管理與設定'}
                 </h2>
                 <p className="text-slate-400 text-sm">
                   {activeView === 'warranties' 
                     ? '追蹤所有保固案件、維修進度與保證金狀態' 
-                    : '管理並追蹤所有專案的維修與待料進度'}
+                    : activeView === 'issues' 
+                      ? '管理並追蹤所有專案的維修與待料進度'
+                      : '管理所有合作廠商及其 LINE 通知綁定設定'}
                 </p>
               </div>
             </div>
 
             {activeView === 'warranties' ? (
               <WarrantyList onEdit={handleEdit} />
-            ) : (
+            ) : activeView === 'issues' ? (
               <AllIssuesList />
+            ) : (
+              <VendorManagement />
             )}
           </div>
         </div>

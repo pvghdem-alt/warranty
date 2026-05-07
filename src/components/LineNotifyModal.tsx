@@ -259,13 +259,35 @@ export default function LineNotifyModal({
                 </div>
               </div>
 
-              <button
-                onClick={handleSend}
-                disabled={loading}
-                className="w-full py-3 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white font-bold rounded-xl shadow-lg shadow-green-500/20 flex justify-center items-center gap-2 transition-all"
-              >
-                {loading ? '傳送中...' : '直接傳送訊息'}
-              </button>
+              <div className="flex flex-col gap-3">
+                <button
+                  onClick={handleSend}
+                  disabled={loading}
+                  className="w-full py-3 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white font-bold rounded-xl shadow-lg shadow-green-500/20 flex justify-center items-center gap-2 transition-all"
+                >
+                  {loading ? '傳送中...' : '使用自動 API 傳送 (將扣除額度)'}
+                </button>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(messageText);
+                      alert('訊息已複製！請在官方帳號後台貼上傳送。');
+                      if (vendorLineId) {
+                        try {
+                          const parts = window.location.host.split('-');
+                          // Assume they use generic line biz or we just open straight to line biz
+                          window.open(`https://chat.line.biz/`, '_blank');
+                        } catch(e) {}
+                      } else {
+                        window.open(`https://chat.line.biz/`, '_blank');
+                      }
+                    }}
+                    className="flex-1 py-3 bg-white border-2 border-green-600 text-green-700 hover:bg-green-50 font-bold rounded-xl flex justify-center items-center gap-2 transition-all"
+                  >
+                    複製訊息並手動傳送 (免扣額度)
+                  </button>
+                </div>
+              </div>
             </>
           )}
         </div>

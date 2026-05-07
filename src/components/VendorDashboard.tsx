@@ -33,6 +33,7 @@ export default function VendorDashboard({ vendorName }: VendorDashboardProps) {
   const [loading, setLoading] = useState(true);
   const [projectsMap, setProjectsMap] = useState<Record<string, string>>({});
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [hasJointProjects, setHasJointProjects] = useState(false);
   
   // Edit form state
   const [status, setStatus] = useState<Issue['status']>('未處理');
@@ -41,13 +42,33 @@ export default function VendorDashboard({ vendorName }: VendorDashboardProps) {
   const [updating, setUpdating] = useState(false);
 
   useEffect(() => {
-    // Fetch warranties to map IDs to project names
+    // Fetch warranties to map IDs to project names and detect joint projects
     getDocs(collection(db, 'warranties')).then(snap => {
       const pMap: Record<string, string> = {};
+      const projToVendors: Record<string, Set<string>> = {};
+      
       snap.forEach(d => {
-        pMap[d.id] = d.data().projectName;
+        const data = d.data();
+        pMap[d.id] = data.projectName;
+        
+        if (!projToVendors[data.projectName]) {
+          projToVendors[data.projectName] = new Set();
+        }
+        if (data.vendor) {
+          projToVendors[data.projectName].add(data.vendor);
+        }
       });
       setProjectsMap(pMap);
+      
+      // Determine if this vendor is involved in ANY joint project (a project with > 1 vendor)
+      let joint = false;
+      Object.keys(projToVendors).forEach(pName => {
+        if (projToVendors[pName].has(vendorName) && projToVendors[pName].size > 1) {
+          joint = true;
+        }
+      });
+      setHasJointProjects(joint);
+      
     }).catch(e => {
       console.error(e);
     });
@@ -156,6 +177,37 @@ export default function VendorDashboard({ vendorName }: VendorDashboardProps) {
             <p className="text-sm font-bold text-slate-500">{vendorName}</p>
           </div>
         </div>
+
+        {hasJointProjects && (
+          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 flex gap-4 text-amber-800 shadow-sm mb-6">
+            <Construction className="w-6 h-6 flex-shrink-0 mt-0.5 text-amber-600" />
+            <div className="text-sm">
+              <p className="font-bold mb-1 text-base text-amber-900">共同承攬專案注意事項</p>
+              <p className="leading-relaxed">本工程為共同承攬，目前所打的工單分配只是本院依照現有設備歸屬來進行分類，如果所接到工單的廠商覺得用電、用水或其他介面是其他合作承攬廠商的問題，應自行協調解決或者一起到現場釐清，醫院並沒有辦法完全知道當時施工時他們的分工細節。</p>
+            </div>
+          </div>
+        )}
+
+        {issues.length > 0 && (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+              <p className="text-xs font-bold text-slate-500 mb-1">總工單數</p>
+              <p className="text-2xl font-black text-slate-800">{issues.length}</p>
+            </div>
+            <div className="bg-red-50 p-4 rounded-2xl border border-red-100 shadow-sm">
+              <p className="text-xs font-bold text-red-600 mb-1">未處理</p>
+              <p className="text-2xl font-black text-red-700">{issues.filter(i => i.status === '未處理').length}</p>
+            </div>
+            <div className="bg-amber-50 p-4 rounded-2xl border border-amber-100 shadow-sm">
+              <p className="text-xs font-bold text-amber-600 mb-1">維修 / 待料中</p>
+              <p className="text-2xl font-black text-amber-700">{issues.filter(i => i.status === '維修中' || i.status === '待料中').length}</p>
+            </div>
+            <div className="bg-green-50 p-4 rounded-2xl border border-green-100 shadow-sm">
+              <p className="text-xs font-bold text-green-600 mb-1">已完成</p>
+              <p className="text-2xl font-black text-green-700">{issues.filter(i => i.status === '已完成').length}</p>
+            </div>
+          </div>
+        )}
 
         {issues.length === 0 ? (
           <div className="bg-white p-12 rounded-3xl shadow-sm border border-slate-200 text-center">
