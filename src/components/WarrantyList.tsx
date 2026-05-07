@@ -181,6 +181,10 @@ export default function WarrantyList({ onEdit }: WarrantyListProps) {
                                         target="_blank"
                                         rel="noreferrer"
                                         className="hover:text-blue-600 hover:underline inline-flex items-center gap-0.5"
+                                        onClick={(e) => {
+                                          const url = `${window.location.origin}/?vendor=${encodeURIComponent(v.trim())}&project=${encodeURIComponent(w.id || '')}`;
+                                          navigator.clipboard.writeText(url).catch(() => {});
+                                        }}
                                       >
                                         {v.trim()}
                                       </a>

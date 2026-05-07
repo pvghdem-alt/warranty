@@ -269,6 +269,10 @@ export default function AllIssuesList() {
                       rel="noreferrer"
                       className="inline-flex items-center justify-center p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
                       title="開啟廠商專屬頁面"
+                      onClick={(e) => {
+                        const url = `${window.location.origin}/?vendor=${encodeURIComponent(vendor)}`;
+                        navigator.clipboard.writeText(url).catch(() => {});
+                      }}
                     >
                       <ExternalLink className="w-5 h-5" />
                     </a>
@@ -370,6 +374,10 @@ export default function AllIssuesList() {
                             target="_blank" 
                             rel="noreferrer"
                             className="bg-slate-100 text-slate-500 px-2 py-1 rounded-md text-[10px] hover:bg-blue-100 hover:text-blue-700 transition-colors inline-flex items-center gap-1 leading-none shadow-sm"
+                            onClick={(e) => {
+                              const url = `${window.location.origin}/?vendor=${encodeURIComponent(v)}&project=${encodeURIComponent(issue.warrantyId)}`;
+                              navigator.clipboard.writeText(url).catch(() => {});
+                            }}
                           >
                             <Building2 className="w-3 h-3" />
                             {v}
