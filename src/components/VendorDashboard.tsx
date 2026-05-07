@@ -257,7 +257,7 @@ export default function VendorDashboard({ vendorName }: VendorDashboardProps) {
             <select
               value={selectedProjectId}
               onChange={(e) => setSelectedProjectId(e.target.value)}
-              className="w-full h-full px-4 py-3 bg-white border border-slate-200 rounded-xl outline-none focus:ring-4 focus:ring-slate-500/5 focus:border-slate-500 transition-all shadow-sm appearance-none text-slate-700 font-bold"
+              className="w-full h-full px-4 py-3 bg-white border border-slate-200 rounded-xl outline-none focus:ring-4 focus:ring-slate-500/5 focus:border-slate-500 transition-all shadow-sm appearance-none text-lg text-slate-800 font-black"
             >
               <option value="all">所有工程案</option>
               {vendorProjectIds.map(id => (
@@ -309,21 +309,21 @@ export default function VendorDashboard({ vendorName }: VendorDashboardProps) {
                   <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
                     <div className="flex-1">
                       <div className="flex flex-wrap items-center gap-2 mb-2">
-                        <span className={cn("px-2 py-0.5 text-[10px] font-bold rounded border", statusColors[issue.status])}>
+                        <span className={cn("px-2 py-0.5 text-xs font-bold rounded border", statusColors[issue.status])}>
                           {issue.status}
                         </span>
-                        <span className="text-sm font-bold text-blue-800 bg-blue-100 px-3 py-1 rounded shadow-sm">
+                        <span className="text-base md:text-lg font-black text-blue-800 bg-blue-100 px-3 py-1 rounded shadow-sm border border-blue-200">
                           {projName}
                         </span>
                         {issue.status !== '已完成' && waitDays > 0 && (
-                          <span className="text-[10px] font-bold text-red-500">
+                          <span className="text-xs font-bold text-red-500">
                             待機 {waitDays} 天
                           </span>
                         )}
                       </div>
-                      <h3 className="font-bold text-lg text-slate-800 mb-2">{issue.issueName}</h3>
-                      <p className="text-xs text-slate-500 mt-1 mb-2 flex items-center gap-1">
-                        <Clock className="w-3 h-3" /> 登載日期：{issue.createdAt?.toDate?.().toLocaleDateString('zh-TW')}
+                      <h3 className="font-bold text-xl text-slate-800 mb-2 mt-3">{issue.issueName}</h3>
+                      <p className="text-sm text-slate-500 mt-1 mb-3 flex items-center gap-1.5">
+                        <Clock className="w-4 h-4" /> 登載日期：{issue.createdAt?.toDate?.().toLocaleDateString('zh-TW')}
                       </p>
                       
                       {!isEditing && (

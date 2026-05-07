@@ -8,7 +8,7 @@ import {
 } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
 import { db, OperationType, handleFirestoreError } from '../lib/firebase';
-import { Warranty } from '../types';
+import { Warranty, Issue } from '../types';
 import { toROCDate, getExpiryStatus } from '../utils/rocDate';
 import { formatCurrency, cn } from '../lib/utils';
 import { 
@@ -20,7 +20,8 @@ import {
   CheckCircle,
   Construction,
   Building2,
-  Wrench
+  Wrench,
+  ExternalLink
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import ProjectIssuesModal from './ProjectIssuesModal';
@@ -32,25 +33,40 @@ interface WarrantyListProps {
 
 export default function WarrantyList({ onEdit }: WarrantyListProps) {
   const [warranties, setWarranties] = useState<Warranty[]>([]);
+  const [issues, setIssues] = useState<Issue[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedProjectForIssues, setSelectedProjectForIssues] = useState<{id: string, name: string, vendor: string} | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; id: string | null }>({ isOpen: false, id: null });
 
   useEffect(() => {
-    const q = query(collection(db, 'warranties'), orderBy('expiryDate', 'asc'));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
+    const wq = query(collection(db, 'warranties'), orderBy('expiryDate', 'asc'));
+    const unsubscribeW = onSnapshot(wq, (snapshot) => {
       const data = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       })) as Warranty[];
       setWarranties(data);
-      setLoading(false);
     }, (error) => {
       handleFirestoreError(error, OperationType.LIST, 'warranties');
     });
 
-    return () => unsubscribe();
+    const iq = query(collection(db, 'issues'));
+    const unsubscribeI = onSnapshot(iq, (snapshot) => {
+      const data = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as Issue[];
+      setIssues(data);
+      setLoading(false);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, 'issues');
+    });
+
+    return () => {
+      unsubscribeW();
+      unsubscribeI();
+    };
   }, []);
 
   const handleDelete = async (id: string) => {
@@ -67,6 +83,19 @@ export default function WarrantyList({ onEdit }: WarrantyListProps) {
     w.vendor.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (w.issueRemark || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const getIssueStats = (warrantyId: string) => {
+    const projectIssues = issues.filter(i => i.warrantyId === warrantyId);
+    if (!projectIssues.length) return null;
+    
+    const unhandled = projectIssues.filter(i => i.status === '未處理').length;
+    const fixing = projectIssues.filter(i => i.status === '維修中').length;
+    const waiting = projectIssues.filter(i => i.status === '待料中').length;
+    const done = projectIssues.filter(i => i.status === '已完成').length;
+    const total = projectIssues.length;
+    
+    return { unhandled, fixing, waiting, done, total };
+  };
 
   if (loading) {
     return (
@@ -118,6 +147,7 @@ export default function WarrantyList({ onEdit }: WarrantyListProps) {
               <AnimatePresence mode="popLayout">
                 {filteredWarranties.map((w) => {
                   const status = getExpiryStatus(w.expiryDate.toDate(), w.hasIssue);
+                  const stats = getIssueStats(w.id!);
                   return (
                     <motion.tr
                       layout
@@ -133,26 +163,52 @@ export default function WarrantyList({ onEdit }: WarrantyListProps) {
                       <td className="p-4">
                         <div className="flex items-start gap-3">
                           <div className={cn(
-                            "p-2 rounded-lg",
+                            "p-2 rounded-lg mt-1",
                             w.hasIssue ? "bg-red-100 text-red-600" : "bg-slate-100 text-slate-600"
                           )}>
                             <Construction className="w-5 h-5" />
                           </div>
                           <div>
                             <div className="font-bold text-slate-900 leading-tight">{w.projectName}</div>
-                            <div className="text-xs text-slate-400 mt-1 flex items-center gap-1">
-                              <Building2 className="w-3 h-3" /> {w.vendor || '未知廠商'}
+                            <div className="text-xs text-slate-500 mt-1 flex items-center gap-1 flex-wrap">
+                              <Building2 className="w-3 h-3 flex-shrink-0" /> 
+                              {w.vendor ? (
+                                <div className="flex flex-wrap items-center gap-0.5">
+                                  {w.vendor.split('、').map((v, i, arr) => (
+                                    <React.Fragment key={i}>
+                                      <a 
+                                        href={`/?vendor=${encodeURIComponent(v.trim())}`}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="hover:text-blue-600 hover:underline inline-flex items-center gap-0.5"
+                                      >
+                                        {v.trim()}
+                                      </a>
+                                      {i < arr.length - 1 && <span className="text-slate-400 mr-0.5">、</span>}
+                                      {i === arr.length - 1 && <ExternalLink className="w-3 h-3 opacity-50 ml-0.5" />}
+                                    </React.Fragment>
+                                  ))}
+                                </div>
+                              ) : '未知廠商'}
                             </div>
+                            {stats && (
+                              <div className="mt-2 flex flex-wrap gap-2 text-[10px] font-bold">
+                                {stats.unhandled > 0 && <span className="bg-red-100 text-red-700 px-1.5 py-0.5 rounded">未處理：{stats.unhandled}</span>}
+                                {stats.fixing > 0 && <span className="bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded">維修中：{stats.fixing}</span>}
+                                {stats.waiting > 0 && <span className="bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded">待料中：{stats.waiting}</span>}
+                                {stats.done > 0 && <span className="bg-green-100 text-green-700 px-1.5 py-0.5 rounded">已完成：{stats.done}</span>}
+                              </div>
+                            )}
                           </div>
                         </div>
                       </td>
-                      <td className="p-4 text-center">
+                      <td className="p-4 text-center align-top pt-5">
                         <div className="text-sm font-semibold text-slate-700">{toROCDate(w.expiryDate.toDate())}</div>
                         <div className={cn("text-[11px] mt-1 flex items-center justify-center gap-1", status.color)}>
                           <Clock className="w-3 h-3" /> {status.label}
                         </div>
                       </td>
-                      <td className="p-4 text-right">
+                      <td className="p-4 text-right align-top pt-5">
                         <div className="text-sm font-bold text-slate-800">{formatCurrency(w.deposit)}</div>
                         <div className={cn(
                           "text-[10px] mt-1 font-medium",
@@ -161,7 +217,7 @@ export default function WarrantyList({ onEdit }: WarrantyListProps) {
                           {w.isRefunded ? '✅ 已退款' : '⏳ 未退款'}
                         </div>
                       </td>
-                      <td className="p-4 max-w-xs">
+                      <td className="p-4 max-w-xs align-top">
                         <div className="mb-2">
                           {w.hasIssue ? (
                             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-red-100 text-red-700 text-[10px] font-extrabold uppercase">
@@ -186,7 +242,7 @@ export default function WarrantyList({ onEdit }: WarrantyListProps) {
                           </div>
                         )}
                       </td>
-                      <td className="p-4">
+                      <td className="p-4 align-top pt-5">
                         <div className="flex justify-center items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                           <button
                             onClick={() => w.id && setSelectedProjectForIssues({ id: w.id, name: w.projectName, vendor: w.vendor })}
@@ -236,3 +292,4 @@ export default function WarrantyList({ onEdit }: WarrantyListProps) {
     </div>
   );
 }
+

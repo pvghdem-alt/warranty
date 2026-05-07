@@ -30,6 +30,14 @@ export default function App() {
   const vendorName = params.get('vendor');
 
   useEffect(() => {
+    // Keep-alive ping every 8 minutes (480000 ms) to prevent free-tier hosts (like Render) from sleeping
+    const keepAlive = setInterval(() => {
+      fetch('/').catch(() => {});
+    }, 8 * 60 * 1000);
+    return () => clearInterval(keepAlive);
+  }, []);
+
+  useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       setAuthLoading(false);
