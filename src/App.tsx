@@ -28,6 +28,7 @@ export default function App() {
   const params = new URLSearchParams(window.location.search);
   const isVendorDashboard = params.has('vendor');
   const vendorName = params.get('vendor');
+  const projectId = params.get('project');
 
   useEffect(() => {
     // Keep-alive ping every 8 minutes (480000 ms) to prevent free-tier hosts (like Render) from sleeping
@@ -56,7 +57,7 @@ export default function App() {
   }, [isVendorDashboard, user]);
 
   if (isVendorDashboard && vendorName) {
-    return <VendorDashboard vendorName={vendorName} />;
+    return <VendorDashboard vendorName={vendorName} initialProjectId={projectId} />;
   }
 
   if (authLoading) {

@@ -28,9 +28,10 @@ const statusColors = {
 
 interface VendorDashboardProps {
   vendorName: string;
+  initialProjectId?: string | null;
 }
 
-export default function VendorDashboard({ vendorName }: VendorDashboardProps) {
+export default function VendorDashboard({ vendorName, initialProjectId }: VendorDashboardProps) {
   const [issues, setIssues] = useState<Issue[]>([]);
   const [loading, setLoading] = useState(true);
   const [projectsMap, setProjectsMap] = useState<Record<string, string>>({});
@@ -38,7 +39,7 @@ export default function VendorDashboard({ vendorName }: VendorDashboardProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [hasJointProjects, setHasJointProjects] = useState(false);
   const [activeTab, setActiveTab] = useState<'all'|'未處理'|'維修中'|'待料中'|'已完成'>('未處理');
-  const [selectedProjectId, setSelectedProjectId] = useState<string>('all');
+  const [selectedProjectId, setSelectedProjectId] = useState<string>(initialProjectId || 'all');
   
   // Edit form state
   const [status, setStatus] = useState<Issue['status']>('未處理');
@@ -72,6 +73,8 @@ export default function VendorDashboard({ vendorName }: VendorDashboardProps) {
       setProjectVendors(pVendorsMap);
       
       // Determine if this vendor is involved in ANY joint project (a project with > 1 vendor)
+      // If we have a specific selectedProjectId, we only check that one. Otherwise we check all.
+      // We will re-evaluate this dynamically during render instead of state, but keeping state for global view.
       let joint = false;
       Object.keys(projToVendors).forEach(pName => {
         if (projToVendors[pName].has(vendorName) && projToVendors[pName].size > 1) {
@@ -203,6 +206,11 @@ export default function VendorDashboard({ vendorName }: VendorDashboardProps) {
 
   const vendorProjectIds = Array.from(new Set(issues.map(i => i.warrantyId)));
 
+  const showJointNotice = React.useMemo(() => {
+    if (selectedProjectId === 'all') return hasJointProjects;
+    return !!(projectVendors[selectedProjectId] && projectVendors[selectedProjectId].length > 1 && projectVendors[selectedProjectId].includes(vendorName));
+  }, [selectedProjectId, hasJointProjects, projectVendors, vendorName]);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
@@ -219,12 +227,14 @@ export default function VendorDashboard({ vendorName }: VendorDashboardProps) {
             <ShieldCheck className="w-7 h-7 text-white" />
           </div>
           <div>
-            <h1 className="text-xl font-black text-slate-900 leading-none mb-1">廠商維修管理</h1>
+            <h1 className="text-xl font-black text-slate-900 leading-none mb-1">
+              廠商維修管理{selectedProjectId !== 'all' && projectsMap[selectedProjectId] ? `─${projectsMap[selectedProjectId]}` : ''}
+            </h1>
             <p className="text-sm font-bold text-slate-500">{vendorName}</p>
           </div>
         </div>
 
-        {hasJointProjects && (
+        {showJointNotice && (
           <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 flex gap-4 text-amber-800 shadow-sm mb-6">
             <Construction className="w-6 h-6 flex-shrink-0 mt-0.5 text-amber-600" />
             <div className="text-sm">

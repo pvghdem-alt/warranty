@@ -366,7 +366,7 @@ export default function AllIssuesList() {
                         {issue.vendorCompany.split(/[,、;]+/).map(v => v.trim()).filter(Boolean).map((v, i) => (
                           <a 
                             key={i}
-                            href={`/?vendor=${encodeURIComponent(v)}`} 
+                            href={`/?vendor=${encodeURIComponent(v)}&project=${encodeURIComponent(issue.warrantyId)}`} 
                             target="_blank" 
                             rel="noreferrer"
                             className="bg-slate-100 text-slate-500 px-2 py-1 rounded-md text-[10px] hover:bg-blue-100 hover:text-blue-700 transition-colors inline-flex items-center gap-1 leading-none shadow-sm"

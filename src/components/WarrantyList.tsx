@@ -177,7 +177,7 @@ export default function WarrantyList({ onEdit }: WarrantyListProps) {
                                   {w.vendor.split('、').map((v, i, arr) => (
                                     <React.Fragment key={i}>
                                       <a 
-                                        href={`/?vendor=${encodeURIComponent(v.trim())}`}
+                                        href={`/?vendor=${encodeURIComponent(v.trim())}&project=${encodeURIComponent(w.id || '')}`}
                                         target="_blank"
                                         rel="noreferrer"
                                         className="hover:text-blue-600 hover:underline inline-flex items-center gap-0.5"
