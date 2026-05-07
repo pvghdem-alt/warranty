@@ -31,7 +31,7 @@ const statusColors = {
 export default function AllIssuesList() {
   const [issues, setIssues] = useState<Issue[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'all'|'未處理'|'維修中'|'待料中'|'已完成'>('all');
+  const [activeTab, setActiveTab] = useState<'all'|'未處理'|'維修中'|'待料中'|'已完成'>('未處理');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedProjectId, setSelectedProjectId] = useState<string>('all');
   // Warranty projects map
@@ -66,7 +66,8 @@ export default function AllIssuesList() {
       data.sort((a, b) => {
         const timeA = a.createdAt?.toMillis?.() || 0;
         const timeB = b.createdAt?.toMillis?.() || 0;
-        return timeB - timeA;
+        // 拖越久越前面 (oldest first)
+        return timeA - timeB;
       });
       
       setIssues(data);
@@ -234,7 +235,7 @@ export default function AllIssuesList() {
                         新回覆
                       </span>
                     )}
-                    <span className="text-[10px] text-slate-400 bg-slate-100 px-2 py-0.5 rounded font-mono">
+                    <span className="text-sm font-bold text-blue-800 bg-blue-100 px-3 py-1 rounded shadow-sm">
                       {projName}
                     </span>
                     {issue.status !== '已完成' && waitDays > 0 && (
@@ -342,7 +343,11 @@ export default function AllIssuesList() {
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm bg-slate-50/80 p-3 rounded-xl border border-slate-100">
                   <div>
                     <p className="text-[10px] font-bold text-slate-400 mb-1">負責廠商</p>
-                    <p className="text-slate-700 font-medium truncate">{issue.vendorCompany || <span className="text-slate-400 italic">未指定</span>}</p>
+                    <p className="text-slate-700 font-medium truncate">
+                      {issue.involvedVendors && issue.involvedVendors.length > 1 
+                        ? issue.involvedVendors.join('、')
+                        : (issue.vendorCompany || <span className="text-slate-400 italic">未指定</span>)}
+                    </p>
                   </div>
                   <div>
                     <p className="text-[10px] font-bold text-slate-400 mb-1">預計維修時間</p>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, where, onSnapshot, getDocs, doc, updateDoc, serverTimestamp, getDoc } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, getDocs, doc, updateDoc, serverTimestamp, getDoc, or } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 import { ShieldCheck, CheckCircle2, AlertCircle, Clock, Construction } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -15,6 +15,8 @@ interface Issue {
   createdAt?: any;
   updatedAt?: any;
   warrantyId: string;
+  hasUnreadReply?: boolean;
+  involvedVendors?: string[];
 }
 
 const statusColors = {
@@ -32,13 +34,18 @@ export default function VendorDashboard({ vendorName }: VendorDashboardProps) {
   const [issues, setIssues] = useState<Issue[]>([]);
   const [loading, setLoading] = useState(true);
   const [projectsMap, setProjectsMap] = useState<Record<string, string>>({});
+  const [projectVendors, setProjectVendors] = useState<Record<string, string[]>>({});
   const [editingId, setEditingId] = useState<string | null>(null);
   const [hasJointProjects, setHasJointProjects] = useState(false);
+  const [activeTab, setActiveTab] = useState<'all'|'未處理'|'維修中'|'待料中'|'已完成'>('未處理');
+  const [selectedProjectId, setSelectedProjectId] = useState<string>('all');
   
   // Edit form state
   const [status, setStatus] = useState<Issue['status']>('未處理');
   const [vendorReply, setVendorReply] = useState('');
   const [estRepairTime, setEstRepairTime] = useState('');
+  const [involveOtherVendors, setInvolveOtherVendors] = useState<string[]>([]);
+  const [assignedVendor, setAssignedVendor] = useState<string>(''); // For re-assigning joint vendors
   const [updating, setUpdating] = useState(false);
 
   useEffect(() => {
@@ -46,19 +53,23 @@ export default function VendorDashboard({ vendorName }: VendorDashboardProps) {
     getDocs(collection(db, 'warranties')).then(snap => {
       const pMap: Record<string, string> = {};
       const projToVendors: Record<string, Set<string>> = {};
+      const pVendorsMap: Record<string, string[]> = {};
       
       snap.forEach(d => {
         const data = d.data();
         pMap[d.id] = data.projectName;
         
-        if (!projToVendors[data.projectName]) {
-          projToVendors[data.projectName] = new Set();
-        }
         if (data.vendor) {
-          projToVendors[data.projectName].add(data.vendor);
+          const vendors = data.vendor.split(/[,、;]+/).map((v: string) => v.trim()).filter(Boolean);
+          pVendorsMap[d.id] = vendors;
+          if (!projToVendors[data.projectName]) {
+            projToVendors[data.projectName] = new Set();
+          }
+          vendors.forEach((v: string) => projToVendors[data.projectName].add(v));
         }
       });
       setProjectsMap(pMap);
+      setProjectVendors(pVendorsMap);
       
       // Determine if this vendor is involved in ANY joint project (a project with > 1 vendor)
       let joint = false;
@@ -73,7 +84,13 @@ export default function VendorDashboard({ vendorName }: VendorDashboardProps) {
       console.error(e);
     });
 
-    const q = query(collection(db, 'issues'), where('vendorCompany', '==', vendorName));
+    const q = query(
+      collection(db, 'issues'), 
+      or(
+        where('vendorCompany', '==', vendorName),
+        where('involvedVendors', 'array-contains', vendorName)
+      )
+    );
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const data = snapshot.docs.map(doc => ({
         id: doc.id,
@@ -83,7 +100,8 @@ export default function VendorDashboard({ vendorName }: VendorDashboardProps) {
       data.sort((a, b) => {
         const timeA = a.createdAt?.toMillis?.() || 0;
         const timeB = b.createdAt?.toMillis?.() || 0;
-        return timeB - timeA;
+        // 拖越久越前面 (oldest first)
+        return timeA - timeB;
       });
       
       setIssues(data);
@@ -104,6 +122,10 @@ export default function VendorDashboard({ vendorName }: VendorDashboardProps) {
       setStatus(issue.status);
       setVendorReply(issue.vendorReply || '');
       setEstRepairTime(issue.estRepairTime || '');
+      // Ensure involvedVendors array exists, default to empty
+      const existingInvolved = issue.involvedVendors || [];
+      // Don't include current vendor in the add-list
+      setInvolveOtherVendors(existingInvolved.filter((v: string) => v !== vendorName));
     }
   };
 
@@ -136,10 +158,19 @@ export default function VendorDashboard({ vendorName }: VendorDashboardProps) {
     e.preventDefault();
     setUpdating(true);
     try {
+      const issueToUpdate = issues.find(i => i.id === id);
+      
+      const newInvolvedVendors = Array.from(new Set([
+        vendorName, 
+        ...(issueToUpdate?.vendorCompany ? [issueToUpdate.vendorCompany] : []), 
+        ...involveOtherVendors
+      ]));
+
       await updateDoc(doc(db, 'issues', id), {
         status,
         vendorReply,
         estRepairTime,
+        involvedVendors: newInvolvedVendors,
         hasUnreadReply: true,
         updatedAt: serverTimestamp()
       });
@@ -156,6 +187,21 @@ export default function VendorDashboard({ vendorName }: VendorDashboardProps) {
       setUpdating(false);
     }
   };
+
+  const filteredIssues = issues.filter(i => {
+    if (activeTab !== 'all' && i.status !== activeTab) return false;
+    if (selectedProjectId !== 'all' && i.warrantyId !== selectedProjectId) return false;
+    return true;
+  });
+
+  const getWaitingDays = (date: any) => {
+    if (!date) return 0;
+    const ms = date.toMillis?.() || 0;
+    if (!ms) return 0;
+    return Math.ceil((Date.now() - ms) / (1000 * 60 * 60 * 24));
+  };
+
+  const vendorProjectIds = Array.from(new Set(issues.map(i => i.warrantyId)));
 
   if (loading) {
     return (
@@ -183,10 +229,46 @@ export default function VendorDashboard({ vendorName }: VendorDashboardProps) {
             <Construction className="w-6 h-6 flex-shrink-0 mt-0.5 text-amber-600" />
             <div className="text-sm">
               <p className="font-bold mb-1 text-base text-amber-900">共同承攬專案注意事項</p>
-              <p className="leading-relaxed">本工程為共同承攬，目前所打的工單分配只是本院依照現有設備歸屬來進行分類，如果所接到工單的廠商覺得用電、用水或其他介面是其他合作承攬廠商的問題，應自行協調解決或者一起到現場釐清，醫院並沒有辦法完全知道當時施工時他們的分工細節。</p>
+              <p className="leading-relaxed">本工程採共同承攬方式辦理，現行工單分配係本院依設備歸屬預作之分類。如承攬廠商認屬工單內容涉及用電、用水或其他介面整合問題，應由共同承攬成員自行協調解決或會同至現場釐清。鑑於施工期間之分工細節屬廠商內部約定事項，本院不予干預，廠商不得因內部爭議影響履約進度。</p>
             </div>
           </div>
         )}
+
+        {/* Filters */}
+        <div className="flex flex-col md:flex-row gap-4 mb-6">
+          <div className="flex gap-2 p-1 bg-slate-200/50 rounded-xl overflow-x-auto flex-1">
+            {(['all', '未處理', '維修中', '待料中', '已完成'] as const).map(tab => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={cn(
+                  "px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition-all flex-1 text-center",
+                  activeTab === tab 
+                    ? "bg-white text-slate-800 shadow-sm" 
+                    : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50"
+                )}
+              >
+                {tab === 'all' ? '所有工單' : tab}
+              </button>
+            ))}
+          </div>
+
+          <div className="w-full md:w-64 relative">
+            <select
+              value={selectedProjectId}
+              onChange={(e) => setSelectedProjectId(e.target.value)}
+              className="w-full h-full px-4 py-3 bg-white border border-slate-200 rounded-xl outline-none focus:ring-4 focus:ring-slate-500/5 focus:border-slate-500 transition-all shadow-sm appearance-none text-slate-700 font-bold"
+            >
+              <option value="all">所有工程案</option>
+              {vendorProjectIds.map(id => (
+                <option key={id} value={id}>{projectsMap[id] || '讀取中...'}</option>
+              ))}
+            </select>
+            <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+              <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+            </div>
+          </div>
+        </div>
 
         {issues.length > 0 && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
@@ -209,17 +291,18 @@ export default function VendorDashboard({ vendorName }: VendorDashboardProps) {
           </div>
         )}
 
-        {issues.length === 0 ? (
+        {filteredIssues.length === 0 ? (
           <div className="bg-white p-12 rounded-3xl shadow-sm border border-slate-200 text-center">
             <CheckCircle2 className="w-16 h-16 text-green-500 mx-auto mb-4 opacity-50" />
             <h2 className="text-xl font-bold text-slate-800 mb-2">目前無待處理的工單</h2>
-            <p className="text-slate-500 text-sm">所有工程的維修單皆已處理完畢或尚未產生。</p>
+            <p className="text-slate-500 text-sm">所有符合條件的維修單皆已處理完畢或尚未產生。</p>
           </div>
         ) : (
           <div className="space-y-4">
-            {issues.map(issue => {
+            {filteredIssues.map(issue => {
               const isEditing = editingId === issue.id;
               const projName = projectsMap[issue.warrantyId] || '讀取中...';
+              const waitDays = getWaitingDays(issue.createdAt);
               
               return (
                 <div key={issue.id} className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
@@ -229,11 +312,19 @@ export default function VendorDashboard({ vendorName }: VendorDashboardProps) {
                         <span className={cn("px-2 py-0.5 text-[10px] font-bold rounded border", statusColors[issue.status])}>
                           {issue.status}
                         </span>
-                        <span className="text-[10px] text-slate-500 bg-slate-100 px-2 py-0.5 rounded font-mono font-bold">
+                        <span className="text-sm font-bold text-blue-800 bg-blue-100 px-3 py-1 rounded shadow-sm">
                           {projName}
                         </span>
+                        {issue.status !== '已完成' && waitDays > 0 && (
+                          <span className="text-[10px] font-bold text-red-500">
+                            待機 {waitDays} 天
+                          </span>
+                        )}
                       </div>
                       <h3 className="font-bold text-lg text-slate-800 mb-2">{issue.issueName}</h3>
+                      <p className="text-xs text-slate-500 mt-1 mb-2 flex items-center gap-1">
+                        <Clock className="w-3 h-3" /> 登載日期：{issue.createdAt?.toDate?.().toLocaleDateString('zh-TW')}
+                      </p>
                       
                       {!isEditing && (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 bg-slate-50 p-4 rounded-xl">
@@ -294,11 +385,45 @@ export default function VendorDashboard({ vendorName }: VendorDashboardProps) {
                           <textarea
                             value={vendorReply}
                             onChange={e => setVendorReply(e.target.value)}
-                            placeholder="請描述預計處理方式、原因或進度..."
+                            placeholder={hasJointProjects && (projectVendors[issue.warrantyId]?.length || 0) > 1 ? "請描述處理進度。若屬其他廠商責任介面，請務必在此詳細說明原因..." : "請描述預計處理方式、原因或進度..."}
                             className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all min-h-[100px] resize-y font-medium text-slate-800 shadow-sm"
                             required
                           />
                         </div>
+                        
+                        {(projectVendors[issue.warrantyId]?.length || 0) > 1 && (
+                          <div className="space-y-2 md:col-span-2 p-4 bg-amber-50/50 rounded-xl border border-amber-100">
+                            <label className="text-sm font-bold text-amber-900 block mb-2">
+                              共同承攬：會同其他廠商 (選填)
+                            </label>
+                            <div className="flex gap-2 flex-wrap">
+                              {projectVendors[issue.warrantyId].filter(v => v !== vendorName).map((v, i) => {
+                                const isSelected = involveOtherVendors.includes(v);
+                                return (
+                                  <button
+                                    key={i}
+                                    type="button"
+                                    onClick={() => {
+                                      setInvolveOtherVendors(prev => 
+                                        isSelected ? prev.filter(x => x !== v) : [...prev, v]
+                                      );
+                                    }}
+                                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border ${
+                                      isSelected 
+                                        ? 'bg-amber-600 border-amber-600 text-white' 
+                                        : 'bg-white border-amber-200 text-amber-700 hover:bg-amber-100'
+                                    }`}
+                                  >
+                                    {isSelected ? '✓ ' : '+ '}{v}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                            <p className="text-[10px] text-amber-700 mt-1.5 opacity-80">
+                              若勾選其他廠商，他們將能在其管理介面中看到此工單，請務必於上方「詳細回覆說明」中註明需會勘或處理之介面。
+                            </p>
+                          </div>
+                        )}
                       </div>
                       <div className="flex gap-3 justify-end bg-slate-50 -mx-5 -mb-5 p-4 mt-6 border-t border-slate-100">
                         <button

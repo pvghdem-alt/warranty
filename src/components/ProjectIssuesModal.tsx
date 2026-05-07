@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Plus, Edit3, Trash2, MessageCircle, AlertCircle, CheckCircle, Clock, Construction } from 'lucide-react';
+import { X, Plus, Edit3, Trash2, MessageCircle, AlertCircle, CheckCircle, Clock, Construction, Users } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { collection, addDoc, onSnapshot, query, orderBy, deleteDoc, doc, updateDoc, serverTimestamp, where, getDocs, getDoc } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../lib/firebase';
@@ -40,10 +40,12 @@ export default function ProjectIssuesModal({ warrantyId, projectName, vendorName
   const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; id: string | null }>({ isOpen: false, id: null });
 
   
+  const vendorsList = vendorName ? vendorName.split(/[,、;]+/).map(v => v.trim()).filter(Boolean) : [];
+  
   // Add/Edit form state
   const [editingId, setEditingId] = useState<string | null>(null);
   const [issueName, setIssueName] = useState('');
-  const [vendorCompany, setVendorCompany] = useState(vendorName || '');
+  const [vendorCompany, setVendorCompany] = useState(vendorsList.length === 1 ? vendorsList[0] : (vendorsList[0] || ''));
   const [status, setStatus] = useState<Issue['status']>('未處理');
   const [vendorReply, setVendorReply] = useState('');
   const [estRepairTime, setEstRepairTime] = useState('');
@@ -82,7 +84,7 @@ export default function ProjectIssuesModal({ warrantyId, projectName, vendorName
 
   const resetForm = () => {
     setIssueName('');
-    setVendorCompany(vendorName || '');
+    setVendorCompany(vendorsList.length === 1 ? vendorsList[0] : (vendorsList[0] || ''));
     setStatus('未處理');
     setVendorReply('');
     setEstRepairTime('');
@@ -269,19 +271,41 @@ export default function ProjectIssuesModal({ warrantyId, projectName, vendorName
                     />
                   </div>
                   
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-500">負責廠商</label>
+                    {vendorsList.length > 1 ? (
+                      <select
+                        value={vendorCompany}
+                        onChange={e => setVendorCompany(e.target.value)}
+                        className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all bg-white"
+                      >
+                        {!vendorCompany && <option value="">無 / 請選擇</option>}
+                        {vendorsList.map((v, i) => (
+                          <option key={i} value={v}>{v}</option>
+                        ))}
+                        {vendorCompany && !vendorsList.includes(vendorCompany) && (
+                          <option value={vendorCompany}>{vendorCompany} (自訂/前次紀錄)</option>
+                        )}
+                      </select>
+                    ) : (
+                      <input
+                        type="text"
+                        value={vendorCompany}
+                        onChange={e => setVendorCompany(e.target.value)}
+                        className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                        placeholder="公司名稱"
+                      />
+                    )}
+                  </div>
+                  
+                  {(!editingId) && (
+                    <div className="space-y-1 hidden md:block">
+                      {/* Empty spacer for alignment when creating new */}
+                    </div>
+                  )}
+
                   {editingId && (
                     <>
-                      <div className="space-y-1">
-                        <label className="text-xs font-bold text-slate-500">負責廠商</label>
-                        <input
-                          type="text"
-                          value={vendorCompany}
-                          onChange={e => setVendorCompany(e.target.value)}
-                          className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
-                          placeholder="公司名稱"
-                        />
-                      </div>
-
                       <div className="space-y-1">
                         <label className="text-xs font-bold text-slate-500">處理狀態</label>
                         <select
@@ -366,9 +390,11 @@ export default function ProjectIssuesModal({ warrantyId, projectName, vendorName
                         )}
                       </div>
                       <h4 className="font-bold text-slate-800 text-lg">{issue.issueName}</h4>
-                      {issue.vendorCompany && (
-                        <p className="text-xs text-slate-500 mt-1">廠商：{issue.vendorCompany}</p>
-                      )}
+                      {(issue.involvedVendors && issue.involvedVendors.length > 1) ? (
+                        <p className="text-[10px] sm:text-xs text-slate-500 mt-1 sm:mt-1.5 flex items-center gap-1"><Users className="w-3.5 h-3.5" /> 會同廠商：{issue.involvedVendors.join('、')}</p>
+                      ) : issue.vendorCompany ? (
+                        <p className="text-[10px] sm:text-xs text-slate-500 mt-1 sm:mt-1.5 flex items-center gap-1"><Users className="w-3.5 h-3.5" /> 負責廠商：{issue.vendorCompany}</p>
+                      ) : null}
                     </div>
                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button

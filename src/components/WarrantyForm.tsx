@@ -144,7 +144,7 @@ export default function WarrantyForm({ editData, onClose, onSuccess }: WarrantyF
                 type="text"
                 value={formData.vendor}
                 onChange={(e) => setFormData({ ...formData, vendor: e.target.value })}
-                placeholder="請輸入廠商名稱"
+                placeholder="若有多家共同承攬，請用頓號(、)或逗號(,)隔開"
                 className="w-full px-4 py-2 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
               />
             </div>
