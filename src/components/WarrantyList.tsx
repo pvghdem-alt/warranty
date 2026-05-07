@@ -8,7 +8,7 @@ import {
 } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
 import { db, OperationType, handleFirestoreError } from '../lib/firebase';
-import { Warranty, Issue } from '../types';
+import { Warranty } from '../types';
 import { toROCDate, getExpiryStatus } from '../utils/rocDate';
 import { formatCurrency, cn } from '../lib/utils';
 import { 
@@ -26,6 +26,14 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import ProjectIssuesModal from './ProjectIssuesModal';
 import ConfirmModal from './ConfirmModal';
+
+export interface Issue {
+  id?: string;
+  warrantyId: string;
+  vendorCompany: string;
+  issueName: string;
+  status: '未處理' | '維修中' | '待料中' | '已完成';
+}
 
 interface WarrantyListProps {
   onEdit: (warranty: Warranty) => void;

@@ -11,6 +11,7 @@ interface LineNotifyModalProps {
   projectName: string;
   issueName: string;
   status: string;
+  warrantyId: string;
 }
 
 export default function LineNotifyModal({ 
@@ -19,7 +20,8 @@ export default function LineNotifyModal({
   vendorCompany, 
   projectName, 
   issueName, 
-  status 
+  status,
+  warrantyId
 }: LineNotifyModalProps) {
   const [vendorLineId, setVendorLineId] = useState('');
   const [loading, setLoading] = useState(false);
@@ -70,7 +72,7 @@ export default function LineNotifyModal({
           currentOrigin = currentOrigin.replace('-dev-', '-pre-');
         }
         const baseUrl = currentOrigin + window.location.pathname;
-        const vendorDashboardLink = `${baseUrl}?vendor=${encodeURIComponent(vendorCompany)}`;
+        const vendorDashboardLink = `${baseUrl}?vendor=${vendorCompany}&project=${warrantyId}`;
         
         let msg = `🚧 【維修通知】\n工程：${projectName}\n項目：${issueName}\n狀態：${status}\n廠商：${vendorCompany || '未指定'}\n\n`;
         if (unfinishedIssues.length > 0) {

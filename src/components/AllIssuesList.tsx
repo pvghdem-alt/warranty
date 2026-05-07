@@ -522,6 +522,7 @@ export default function AllIssuesList() {
           projectName={projectsMap[selectedIssue.warrantyId] || '未知專案'}
           issueName={selectedIssue.issueName}
           status={selectedIssue.status}
+          warrantyId={selectedIssue.warrantyId}
         />
       )}
 

@@ -444,6 +444,7 @@ export default function ProjectIssuesModal({ warrantyId, projectName, vendorName
           projectName={projectName}
           issueName={selectedIssue.issueName}
           status={selectedIssue.status}
+          warrantyId={warrantyId}
         />
       )}
 
