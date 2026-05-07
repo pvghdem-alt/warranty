@@ -9,6 +9,7 @@ import LineNotifyModal from './LineNotifyModal';
 import ConfirmModal from './ConfirmModal';
 import ReturnTicketModal from './ReturnTicketModal';
 import ImageUpload from './ImageUpload';
+import ImageViewerModal from './ImageViewerModal';
 
 interface Issue {
   id: string;
@@ -49,7 +50,7 @@ export default function AllIssuesList() {
   const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; id: string | null }>({ isOpen: false, id: null });
   const [returnTicketModal, setReturnTicketModal] = useState<{ isOpen: boolean; issue: Issue | null }>({ isOpen: false, issue: null });
-
+  const [viewImageUrl, setViewImageUrl] = useState<string | null>(null);
 
   useEffect(() => {
     // Fetch warranties to map IDs to project names
@@ -584,9 +585,9 @@ export default function AllIssuesList() {
                       <p className="text-[10px] font-bold text-slate-400 mb-2">相關照片</p>
                       <div className="flex flex-wrap gap-2">
                         {issue.photoUrls.map((url, idx) => (
-                          <a key={idx} href={url} target="_blank" rel="noopener noreferrer" className="block w-16 h-16 rounded-lg overflow-hidden border border-slate-200 hover:opacity-80 transition-opacity">
+                          <button key={idx} type="button" onClick={() => setViewImageUrl(url)} className="block w-16 h-16 rounded-lg overflow-hidden border border-slate-200 hover:opacity-80 transition-opacity">
                             <img src={url} alt="Issue" className="w-full h-full object-cover" />
-                          </a>
+                          </button>
                         ))}
                       </div>
                     </div>
@@ -631,6 +632,7 @@ export default function AllIssuesList() {
         onClose={() => setReturnTicketModal({ isOpen: false, issue: null })}
         onSubmit={handleReturnTicket}
       />
+      <ImageViewerModal url={viewImageUrl} onClose={() => setViewImageUrl(null)} />
     </div>
   );
 }

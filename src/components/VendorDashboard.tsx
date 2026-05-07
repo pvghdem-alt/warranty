@@ -5,6 +5,7 @@ import { ShieldCheck, CheckCircle2, AlertCircle, Clock, Construction } from 'luc
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
 import ImageUpload from './ImageUpload';
+import ImageViewerModal from './ImageViewerModal';
 
 interface Issue {
   id: string;
@@ -51,6 +52,7 @@ export default function VendorDashboard({ vendorName, initialProjectId }: Vendor
   const [estRepairTime, setEstRepairTime] = useState('');
   const [involveOtherVendors, setInvolveOtherVendors] = useState<string[]>([]);
   const [photoUrls, setPhotoUrls] = useState<string[]>([]);
+  const [viewImageUrl, setViewImageUrl] = useState<string | null>(null);
   const [assignedVendor, setAssignedVendor] = useState<string>(''); // For re-assigning joint vendors
   const [updating, setUpdating] = useState(false);
 
@@ -370,9 +372,9 @@ export default function VendorDashboard({ vendorName, initialProjectId }: Vendor
                               <p className="text-[10px] font-bold text-slate-400 mb-2 tracking-wide">相關照片</p>
                               <div className="flex flex-wrap gap-2">
                                 {issue.photoUrls.map((url, idx) => (
-                                  <a key={idx} href={url} target="_blank" rel="noopener noreferrer" className="block w-20 h-20 rounded-lg overflow-hidden border border-slate-200 hover:opacity-80 transition-opacity">
+                                  <button key={idx} type="button" onClick={() => setViewImageUrl(url)} className="block w-20 h-20 rounded-lg overflow-hidden border border-slate-200 hover:opacity-80 transition-opacity">
                                     <img src={url} alt="Issue" className="w-full h-full object-cover" />
-                                  </a>
+                                  </button>
                                 ))}
                               </div>
                             </div>
@@ -495,6 +497,7 @@ export default function VendorDashboard({ vendorName, initialProjectId }: Vendor
           </div>
         )}
       </div>
+      <ImageViewerModal url={viewImageUrl} onClose={() => setViewImageUrl(null)} />
     </div>
   );
 }

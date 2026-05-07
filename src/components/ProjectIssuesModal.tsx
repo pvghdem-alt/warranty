@@ -7,6 +7,7 @@ import LineNotifyModal from './LineNotifyModal';
 import ConfirmModal from './ConfirmModal';
 import ReturnTicketModal from './ReturnTicketModal';
 import ImageUpload from './ImageUpload';
+import ImageViewerModal from './ImageViewerModal';
 
 interface Issue {
   id?: string;
@@ -57,6 +58,7 @@ export default function ProjectIssuesModal({ warrantyId, projectName, vendorName
   const [vendorReply, setVendorReply] = useState('');
   const [estRepairTime, setEstRepairTime] = useState('');
   const [photoUrls, setPhotoUrls] = useState<string[]>([]);
+  const [viewImageUrl, setViewImageUrl] = useState<string | null>(null);
   
   // Line Notify state
   const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
@@ -461,9 +463,9 @@ export default function ProjectIssuesModal({ warrantyId, projectName, vendorName
                       {issue.photoUrls && issue.photoUrls.length > 0 && (
                         <div className="flex flex-wrap gap-2 mt-3">
                           {issue.photoUrls.map((url, idx) => (
-                            <a key={idx} href={url} target="_blank" rel="noopener noreferrer" className="block w-16 h-16 rounded-lg overflow-hidden border border-slate-200 hover:opacity-80 transition-opacity">
+                            <button key={idx} type="button" onClick={() => setViewImageUrl(url)} className="block w-16 h-16 rounded-lg overflow-hidden border border-slate-200 hover:opacity-80 transition-opacity">
                               <img src={url} alt="Issue" className="w-full h-full object-cover" />
-                            </a>
+                            </button>
                           ))}
                         </div>
                       )}
@@ -549,6 +551,8 @@ export default function ProjectIssuesModal({ warrantyId, projectName, vendorName
         onClose={() => setReturnTicketModal({ isOpen: false, issue: null })}
         onSubmit={handleReturnTicket}
       />
+      
+      <ImageViewerModal url={viewImageUrl} onClose={() => setViewImageUrl(null)} />
     </div>
   );
 }

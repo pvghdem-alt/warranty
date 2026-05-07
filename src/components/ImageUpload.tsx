@@ -1,7 +1,5 @@
 import React, { useState } from 'react';
 import imageCompression from 'browser-image-compression';
-import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { storage } from '../lib/firebase';
 import { UploadCloud, X, Loader2, Image as ImageIcon } from 'lucide-react';
 import { cn } from '../lib/utils';
 
@@ -33,27 +31,23 @@ export default function ImageUpload({ photoUrls, onChange, maxPhotos = 3 }: Imag
         const file = files[i];
         
         // Compress image
+        console.log("Compressing image...");
         const options = {
-          maxSizeMB: 1, // Max 1MB
-          maxWidthOrHeight: 1920,
-          useWebWorker: true,
+          maxSizeMB: 0.1, // Max 100KB to fit easily within 1MB Firestore limit
+          maxWidthOrHeight: 1200,
+          useWebWorker: false, // disable web worker to avoid Vite/sandbox issues
         };
         const compressedFile = await imageCompression(file, options);
+        console.log("Image compressed successfully:", compressedFile);
         
-        // Generate a standard filename
-        const filename = `issues/${Date.now()}_${Math.random().toString(36).substring(2, 9)}.jpg`;
-        const storageRef = ref(storage, filename);
-        
-        // Upload
-        await uploadBytes(storageRef, compressedFile);
-        const url = await getDownloadURL(storageRef);
-        newUrls.push(url);
+        // Convert to Base64 Data URL to save directly to Firestore
+        const base64Url = await imageCompression.getDataUrlFromFile(compressedFile);
+        newUrls.push(base64Url);
       }
       onChange(newUrls);
     } catch (err: any) {
       console.error("Upload error:", err);
-      // Fallback: if storage fails due to permissions, we could fallback, but let's just show an error.
-      setError('照片上傳失敗，請確認儲存空間權限或網路連線。');
+      setError('照片處理失敗，請確認圖片格式正確。');
     } finally {
       setUploading(false);
       // Reset input
