@@ -55,7 +55,7 @@ export default function LineNotifyModal({
         let unfinishedIssues: any[] = [];
         issueSnaps.forEach(d => {
           const data = d.data();
-          if (data.status !== '已完成') {
+          if (data.status !== '已完成' && data.status !== '待確認') {
             unfinishedIssues.push({ ...data, id: d.id, createdAt: data.createdAt?.toDate?.() || new Date() });
           }
         });

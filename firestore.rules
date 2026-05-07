@@ -34,10 +34,13 @@ service cloud.firestore {
     function isValidIssue(data) {
       return data.issueName is string && data.issueName.size() > 0 && data.issueName.size() <= 200 &&
              (!data.keys().hasAny(['vendorCompany']) || (data.vendorCompany is string && data.vendorCompany.size() <= 200)) &&
-             (!data.keys().hasAny(['status']) || (data.status is string && data.status in ['未處理', '維修中', '待料中', '已完成'])) &&
+             (!data.keys().hasAny(['status']) || (data.status is string && data.status in ['未處理', '維修中', '待料中', '待確認', '已完成'])) &&
+             (!data.keys().hasAny(['returnReason']) || (data.returnReason is string && data.returnReason.size() <= 500)) &&
+             (!data.keys().hasAny(['involvedVendors']) || (data.involvedVendors is list && data.involvedVendors.size() <= 50)) &&
              (!data.keys().hasAny(['vendorReply']) || (data.vendorReply is string && data.vendorReply.size() <= 1000)) &&
              (!data.keys().hasAny(['estRepairTime']) || (data.estRepairTime is string && data.estRepairTime.size() <= 100)) &&
              (!data.keys().hasAny(['hasUnreadReply']) || (data.hasUnreadReply is bool)) &&
+             (!data.keys().hasAny(['photoUrls']) || (data.photoUrls is list && data.photoUrls.size() <= 10)) &&
              data.warrantyId is string && data.warrantyId.size() <= 128 && data.warrantyId.matches('^[a-zA-Z0-9_\\-]+$');
     }
 

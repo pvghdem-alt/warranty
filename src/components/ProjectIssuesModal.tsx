@@ -5,18 +5,23 @@ import { collection, addDoc, onSnapshot, query, orderBy, deleteDoc, doc, updateD
 import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 import LineNotifyModal from './LineNotifyModal';
 import ConfirmModal from './ConfirmModal';
+import ReturnTicketModal from './ReturnTicketModal';
+import ImageUpload from './ImageUpload';
 
 interface Issue {
   id?: string;
   issueName: string;
   vendorCompany: string;
-  status: '未處理' | '維修中' | '待料中' | '已完成';
+  status: '未處理' | '維修中' | '待料中' | '待確認' | '已完成';
   vendorReply: string;
   estRepairTime: string;
   createdAt?: any;
   updatedAt?: any;
   warrantyId: string;
   hasUnreadReply?: boolean;
+  returnReason?: string;
+  involvedVendors?: string[];
+  photoUrls?: string[];
 }
 
 interface ProjectIssuesModalProps {
@@ -30,6 +35,7 @@ const statusColors = {
   '未處理': 'bg-red-100 text-red-700 border-red-200',
   '維修中': 'bg-amber-100 text-amber-700 border-amber-200',
   '待料中': 'bg-purple-100 text-purple-700 border-purple-200',
+  '待確認': 'bg-blue-100 text-blue-700 border-blue-200',
   '已完成': 'bg-green-100 text-green-700 border-green-200',
 };
 
@@ -38,6 +44,7 @@ export default function ProjectIssuesModal({ warrantyId, projectName, vendorName
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; id: string | null }>({ isOpen: false, id: null });
+  const [returnTicketModal, setReturnTicketModal] = useState<{ isOpen: boolean; issue: Issue | null }>({ isOpen: false, issue: null });
 
   
   const vendorsList = vendorName ? vendorName.split(/[,、;]+/).map(v => v.trim()).filter(Boolean) : [];
@@ -49,6 +56,7 @@ export default function ProjectIssuesModal({ warrantyId, projectName, vendorName
   const [status, setStatus] = useState<Issue['status']>('未處理');
   const [vendorReply, setVendorReply] = useState('');
   const [estRepairTime, setEstRepairTime] = useState('');
+  const [photoUrls, setPhotoUrls] = useState<string[]>([]);
   
   // Line Notify state
   const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
@@ -67,6 +75,9 @@ export default function ProjectIssuesModal({ warrantyId, projectName, vendorName
       
       // Sort by creation time manually since we require index if we compound query
       data.sort((a, b) => {
+        // Sort unread issues to the top
+        if (a.hasUnreadReply && !b.hasUnreadReply) return -1;
+        if (!a.hasUnreadReply && b.hasUnreadReply) return 1;
         const timeA = a.createdAt?.toMillis?.() || 0;
         const timeB = b.createdAt?.toMillis?.() || 0;
         return timeB - timeA;
@@ -88,6 +99,7 @@ export default function ProjectIssuesModal({ warrantyId, projectName, vendorName
     setStatus('未處理');
     setVendorReply('');
     setEstRepairTime('');
+    setPhotoUrls([]);
     setEditingId(null);
     setShowAddForm(false);
   };
@@ -149,6 +161,7 @@ export default function ProjectIssuesModal({ warrantyId, projectName, vendorName
         vendorReply,
         estRepairTime,
         warrantyId,
+        photoUrls,
         updatedAt: serverTimestamp()
       };
 
@@ -177,6 +190,7 @@ export default function ProjectIssuesModal({ warrantyId, projectName, vendorName
     setStatus(issue.status);
     setVendorReply(issue.vendorReply || '');
     setEstRepairTime(issue.estRepairTime || '');
+    setPhotoUrls(issue.photoUrls || []);
     setShowAddForm(true);
     
     if (issue.hasUnreadReply && issue.id) {
@@ -192,6 +206,37 @@ export default function ProjectIssuesModal({ warrantyId, projectName, vendorName
       setDeleteConfirm({ isOpen: false, id: null });
     } catch (error) {
       handleFirestoreError(error, OperationType.DELETE, `issues/${id}`);
+    }
+  };
+
+  const handleConfirmTicket = async (issue: Issue) => {
+    try {
+      if (issue.id) {
+        await updateDoc(doc(db, 'issues', issue.id), {
+          status: '已完成',
+          hasUnreadReply: false,
+          updatedAt: serverTimestamp()
+        });
+      }
+    } catch (error) {
+      handleFirestoreError(error, OperationType.UPDATE, `issues/${issue.id}`);
+    }
+  };
+
+  const handleReturnTicket = async (reason: string) => {
+    const issue = returnTicketModal.issue;
+    if (!issue || !issue.id) return;
+    
+    try {
+      await updateDoc(doc(db, 'issues', issue.id), {
+        status: '未處理',
+        returnReason: reason,
+        hasUnreadReply: true,
+        updatedAt: serverTimestamp()
+      });
+      setReturnTicketModal({ isOpen: false, issue: null });
+    } catch (error) {
+      handleFirestoreError(error, OperationType.UPDATE, `issues/${issue.id}`);
     }
   };
 
@@ -343,6 +388,11 @@ export default function ProjectIssuesModal({ warrantyId, projectName, vendorName
                   )}
                 </div>
 
+                <div className="mt-4 col-span-1 md:col-span-2 space-y-1">
+                  <label className="text-xs font-bold text-slate-500">相關照片上傳</label>
+                  <ImageUpload photoUrls={photoUrls} onChange={setPhotoUrls} />
+                </div>
+
                 <div className="flex gap-2 mt-6 justify-end">
                   <button
                     type="button"
@@ -379,8 +429,16 @@ export default function ProjectIssuesModal({ warrantyId, projectName, vendorName
                           {issue.status}
                         </span>
                         {issue.hasUnreadReply && (
-                          <span className="px-2 py-0.5 text-[10px] font-bold rounded border bg-red-100 text-red-700 border-red-200 animate-pulse">
-                            新回覆
+                          <span className="flex items-center gap-1">
+                            <span className="px-2 py-0.5 text-[10px] font-bold rounded border bg-red-100 text-red-700 border-red-200 animate-pulse">
+                              新回覆
+                            </span>
+                            <button
+                              onClick={() => markAsRead(issue.id)}
+                              className="px-2 py-0.5 text-[10px] font-bold rounded border bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200 transition-colors shadow-sm"
+                            >
+                              標記已讀
+                            </button>
                           </span>
                         )}
                         {issue.createdAt && (
@@ -395,8 +453,38 @@ export default function ProjectIssuesModal({ warrantyId, projectName, vendorName
                       ) : issue.vendorCompany ? (
                         <p className="text-[10px] sm:text-xs text-slate-500 mt-1 sm:mt-1.5 flex items-center gap-1"><Users className="w-3.5 h-3.5" /> 負責廠商：{issue.vendorCompany}</p>
                       ) : null}
+                      {issue.returnReason && (
+                        <p className="text-[10px] sm:text-xs font-bold text-red-600 mt-1 sm:mt-1.5 bg-red-50 p-1.5 rounded-lg border border-red-100 inline-block">
+                          退件原因：{issue.returnReason}
+                        </p>
+                      )}
+                      {issue.photoUrls && issue.photoUrls.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mt-3">
+                          {issue.photoUrls.map((url, idx) => (
+                            <a key={idx} href={url} target="_blank" rel="noopener noreferrer" className="block w-16 h-16 rounded-lg overflow-hidden border border-slate-200 hover:opacity-80 transition-opacity">
+                              <img src={url} alt="Issue" className="w-full h-full object-cover" />
+                            </a>
+                          ))}
+                        </div>
+                      )}
                     </div>
                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      {issue.status === '待確認' && (
+                        <>
+                          <button
+                            onClick={() => handleConfirmTicket(issue)}
+                            className="px-2 py-1 bg-green-500 hover:bg-green-600 text-white text-[10px] font-bold rounded shadow-sm mr-1"
+                          >
+                            已確認
+                          </button>
+                          <button
+                            onClick={() => setReturnTicketModal({ isOpen: true, issue: issue })}
+                            className="px-2 py-1 bg-red-500 hover:bg-red-600 text-white text-[10px] font-bold rounded shadow-sm mr-1"
+                          >
+                            退回
+                          </button>
+                        </>
+                      )}
                       <button
                         onClick={() => notifyLine(issue)}
                         className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
@@ -454,6 +542,12 @@ export default function ProjectIssuesModal({ warrantyId, projectName, vendorName
         message="確定要刪除這筆維修紀錄嗎？此動作無法復原。"
         onConfirm={() => deleteConfirm.id && handleDelete(deleteConfirm.id)}
         onCancel={() => setDeleteConfirm({ isOpen: false, id: null })}
+      />
+      
+      <ReturnTicketModal
+        isOpen={returnTicketModal.isOpen}
+        onClose={() => setReturnTicketModal({ isOpen: false, issue: null })}
+        onSubmit={handleReturnTicket}
       />
     </div>
   );

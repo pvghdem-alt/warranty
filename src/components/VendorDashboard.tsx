@@ -4,12 +4,13 @@ import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 import { ShieldCheck, CheckCircle2, AlertCircle, Clock, Construction } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
+import ImageUpload from './ImageUpload';
 
 interface Issue {
   id: string;
   issueName: string;
   vendorCompany: string;
-  status: '未處理' | '維修中' | '待料中' | '已完成';
+  status: '未處理' | '維修中' | '待料中' | '待確認' | '已完成';
   vendorReply: string;
   estRepairTime: string;
   createdAt?: any;
@@ -17,12 +18,15 @@ interface Issue {
   warrantyId: string;
   hasUnreadReply?: boolean;
   involvedVendors?: string[];
+  returnReason?: string;
+  photoUrls?: string[];
 }
 
 const statusColors = {
   '未處理': 'bg-red-100 text-red-700 border-red-200',
   '維修中': 'bg-amber-100 text-amber-700 border-amber-200',
   '待料中': 'bg-purple-100 text-purple-700 border-purple-200',
+  '待確認': 'bg-blue-100 text-blue-700 border-blue-200',
   '已完成': 'bg-green-100 text-green-700 border-green-200',
 };
 
@@ -38,7 +42,7 @@ export default function VendorDashboard({ vendorName, initialProjectId }: Vendor
   const [projectVendors, setProjectVendors] = useState<Record<string, string[]>>({});
   const [editingId, setEditingId] = useState<string | null>(null);
   const [hasJointProjects, setHasJointProjects] = useState(false);
-  const [activeTab, setActiveTab] = useState<'all'|'未處理'|'維修中'|'待料中'|'已完成'>('未處理');
+  const [activeTab, setActiveTab] = useState<'all'|'未處理'|'維修中'|'待料中'|'待確認'|'已完成'>('未處理');
   const [selectedProjectId, setSelectedProjectId] = useState<string>(initialProjectId || 'all');
   
   // Edit form state
@@ -46,6 +50,7 @@ export default function VendorDashboard({ vendorName, initialProjectId }: Vendor
   const [vendorReply, setVendorReply] = useState('');
   const [estRepairTime, setEstRepairTime] = useState('');
   const [involveOtherVendors, setInvolveOtherVendors] = useState<string[]>([]);
+  const [photoUrls, setPhotoUrls] = useState<string[]>([]);
   const [assignedVendor, setAssignedVendor] = useState<string>(''); // For re-assigning joint vendors
   const [updating, setUpdating] = useState(false);
 
@@ -125,6 +130,7 @@ export default function VendorDashboard({ vendorName, initialProjectId }: Vendor
       setStatus(issue.status);
       setVendorReply(issue.vendorReply || '');
       setEstRepairTime(issue.estRepairTime || '');
+      setPhotoUrls(issue.photoUrls || []);
       // Ensure involvedVendors array exists, default to empty
       const existingInvolved = issue.involvedVendors || [];
       // Don't include current vendor in the add-list
@@ -173,6 +179,7 @@ export default function VendorDashboard({ vendorName, initialProjectId }: Vendor
         status,
         vendorReply,
         estRepairTime,
+        photoUrls,
         involvedVendors: newInvolvedVendors,
         hasUnreadReply: true,
         updatedAt: serverTimestamp()
@@ -247,7 +254,7 @@ export default function VendorDashboard({ vendorName, initialProjectId }: Vendor
         {/* Filters */}
         <div className="flex flex-col md:flex-row gap-4 mb-6">
           <div className="flex gap-2 p-1 bg-slate-200/50 rounded-xl overflow-x-auto flex-1">
-            {(['all', '未處理', '維修中', '待料中', '已完成'] as const).map(tab => (
+            {(['all', '未處理', '維修中', '待料中', '待確認', '已完成'] as const).map(tab => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
@@ -294,6 +301,10 @@ export default function VendorDashboard({ vendorName, initialProjectId }: Vendor
               <p className="text-xs font-bold text-amber-600 mb-1">維修 / 待料中</p>
               <p className="text-2xl font-black text-amber-700">{issues.filter(i => i.status === '維修中' || i.status === '待料中').length}</p>
             </div>
+            <div className="bg-blue-50 p-4 rounded-2xl border border-blue-100 shadow-sm">
+              <p className="text-xs font-bold text-blue-600 mb-1">待確認</p>
+              <p className="text-2xl font-black text-blue-700">{issues.filter(i => i.status === '待確認').length}</p>
+            </div>
             <div className="bg-green-50 p-4 rounded-2xl border border-green-100 shadow-sm">
               <p className="text-xs font-bold text-green-600 mb-1">已完成</p>
               <p className="text-2xl font-black text-green-700">{issues.filter(i => i.status === '已完成').length}</p>
@@ -325,32 +336,52 @@ export default function VendorDashboard({ vendorName, initialProjectId }: Vendor
                         <span className="text-base md:text-lg font-black text-blue-800 bg-blue-100 px-3 py-1 rounded shadow-sm border border-blue-200">
                           {projName}
                         </span>
-                        {issue.status !== '已完成' && waitDays > 0 && (
+                        {issue.status !== '已完成' && issue.status !== '待確認' && waitDays > 0 && (
                           <span className="text-xs font-bold text-red-500">
                             待機 {waitDays} 天
                           </span>
                         )}
                       </div>
                       <h3 className="font-bold text-xl text-slate-800 mb-2 mt-3">{issue.issueName}</h3>
+                      {issue.returnReason && (
+                        <p className="text-sm font-bold text-red-600 mb-2 bg-red-50 p-2 rounded-lg border border-red-100 inline-block">
+                          退件原因：{issue.returnReason}
+                        </p>
+                      )}
                       <p className="text-sm text-slate-500 mt-1 mb-3 flex items-center gap-1.5">
                         <Clock className="w-4 h-4" /> 登載日期：{issue.createdAt?.toDate?.().toLocaleDateString('zh-TW')}
                       </p>
                       
                       {!isEditing && (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 bg-slate-50 p-4 rounded-xl">
-                          <div>
-                            <p className="text-[10px] font-bold text-slate-400 mb-1 tracking-wide">預計維修時間</p>
-                            <p className="text-slate-700 font-medium">{issue.estRepairTime || <span className="text-slate-400 italic">未填寫</span>}</p>
+                        <div className="mt-4 bg-slate-50 p-4 rounded-xl space-y-4">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <p className="text-[10px] font-bold text-slate-400 mb-1 tracking-wide">預計維修時間</p>
+                              <p className="text-slate-700 font-medium">{issue.estRepairTime || <span className="text-slate-400 italic">未填寫</span>}</p>
+                            </div>
+                            <div>
+                              <p className="text-[10px] font-bold text-slate-400 mb-1 tracking-wide">詳細回覆說明</p>
+                              <p className="text-slate-700 font-medium break-words whitespace-pre-wrap">{issue.vendorReply || <span className="text-slate-400 italic">尚未回覆</span>}</p>
+                            </div>
                           </div>
-                          <div>
-                            <p className="text-[10px] font-bold text-slate-400 mb-1 tracking-wide">詳細回覆說明</p>
-                            <p className="text-slate-700 font-medium break-words whitespace-pre-wrap">{issue.vendorReply || <span className="text-slate-400 italic">尚未回覆</span>}</p>
-                          </div>
+                          
+                          {issue.photoUrls && issue.photoUrls.length > 0 && (
+                            <div>
+                              <p className="text-[10px] font-bold text-slate-400 mb-2 tracking-wide">相關照片</p>
+                              <div className="flex flex-wrap gap-2">
+                                {issue.photoUrls.map((url, idx) => (
+                                  <a key={idx} href={url} target="_blank" rel="noopener noreferrer" className="block w-20 h-20 rounded-lg overflow-hidden border border-slate-200 hover:opacity-80 transition-opacity">
+                                    <img src={url} alt="Issue" className="w-full h-full object-cover" />
+                                  </a>
+                                ))}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
                     
-                    {!isEditing && issue.status !== '已完成' && (
+                    {!isEditing && issue.status !== '已完成' && issue.status !== '待確認' && (
                       <button
                         onClick={() => handleEdit(issue)}
                         className="w-full sm:w-auto px-6 py-2.5 bg-slate-800 hover:bg-slate-700 text-white text-sm font-bold rounded-xl transition-all shadow-md mt-2 sm:mt-0"
@@ -378,7 +409,7 @@ export default function VendorDashboard({ vendorName, initialProjectId }: Vendor
                             <option value="未處理">未處理</option>
                             <option value="維修中">維修中</option>
                             <option value="待料中">待料中</option>
-                            <option value="已完成">已完成</option>
+                            <option value="待確認">待確認 (提報完成)</option>
                           </select>
                         </div>
                         <div className="space-y-2">
@@ -434,6 +465,11 @@ export default function VendorDashboard({ vendorName, initialProjectId }: Vendor
                             </p>
                           </div>
                         )}
+
+                        <div className="space-y-2 md:col-span-2">
+                          <label className="text-sm font-bold text-slate-700">相關照片上傳</label>
+                          <ImageUpload photoUrls={photoUrls} onChange={setPhotoUrls} />
+                        </div>
                       </div>
                       <div className="flex gap-3 justify-end bg-slate-50 -mx-5 -mb-5 p-4 mt-6 border-t border-slate-100">
                         <button

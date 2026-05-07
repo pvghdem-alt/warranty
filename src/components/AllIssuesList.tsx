@@ -7,24 +7,29 @@ import { cn } from '../lib/utils';
 import ProjectIssuesModal from './ProjectIssuesModal'; // We can reuse the edit form logic, or just make an inline edit here.
 import LineNotifyModal from './LineNotifyModal';
 import ConfirmModal from './ConfirmModal';
+import ReturnTicketModal from './ReturnTicketModal';
+import ImageUpload from './ImageUpload';
 
 interface Issue {
   id: string;
   issueName: string;
   vendorCompany: string;
-  status: '未處理' | '維修中' | '待料中' | '已完成';
+  status: '未處理' | '維修中' | '待料中' | '待確認' | '已完成';
   vendorReply: string;
   estRepairTime: string;
   createdAt?: any;
   updatedAt?: any;
   warrantyId: string;
   hasUnreadReply?: boolean;
+  returnReason?: string;
+  photoUrls?: string[];
 }
 
 const statusColors = {
   '未處理': 'bg-red-100 text-red-700 border-red-200',
   '維修中': 'bg-orange-100 text-orange-700 border-orange-200',
   '待料中': 'bg-yellow-100 text-yellow-700 border-yellow-200',
+  '待確認': 'bg-blue-100 text-blue-700 border-blue-200',
   '已完成': 'bg-green-100 text-green-700 border-green-200',
 };
 
@@ -32,7 +37,7 @@ export default function AllIssuesList() {
   const [viewMode, setViewMode] = useState<'list' | 'stats'>('list');
   const [issues, setIssues] = useState<Issue[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'all'|'未處理'|'維修中'|'待料中'|'已完成'>('未處理');
+  const [activeTab, setActiveTab] = useState<'all'|'未讀回覆'|'未處理'|'維修中'|'待料中'|'已完成'|'待確認'>('未讀回覆');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedProjectId, setSelectedProjectId] = useState<string>('all');
   // Warranty projects map
@@ -43,6 +48,7 @@ export default function AllIssuesList() {
   
   const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; id: string | null }>({ isOpen: false, id: null });
+  const [returnTicketModal, setReturnTicketModal] = useState<{ isOpen: boolean; issue: Issue | null }>({ isOpen: false, issue: null });
 
 
   useEffect(() => {
@@ -65,6 +71,9 @@ export default function AllIssuesList() {
       })) as Issue[];
       
       data.sort((a, b) => {
+        // Sort unread issues to the top
+        if (a.hasUnreadReply && !b.hasUnreadReply) return -1;
+        if (!a.hasUnreadReply && b.hasUnreadReply) return 1;
         const timeA = a.createdAt?.toMillis?.() || 0;
         const timeB = b.createdAt?.toMillis?.() || 0;
         // 拖越久越前面 (oldest first)
@@ -92,6 +101,37 @@ export default function AllIssuesList() {
     }
   };
 
+  const handleConfirmTicket = async (issue: Issue) => {
+    try {
+      if (issue.id) {
+        await updateDoc(doc(db, 'issues', issue.id), {
+          status: '已完成',
+          hasUnreadReply: false, // Ensure badge clears if it's confirmed
+          updatedAt: serverTimestamp()
+        });
+      }
+    } catch (error) {
+      handleFirestoreError(error, OperationType.UPDATE, `issues/${issue.id}`);
+    }
+  };
+
+  const handleReturnTicket = async (reason: string) => {
+    const issue = returnTicketModal.issue;
+    if (!issue || !issue.id) return;
+    
+    try {
+      await updateDoc(doc(db, 'issues', issue.id), {
+        status: '未處理',
+        returnReason: reason,
+        hasUnreadReply: true,
+        updatedAt: serverTimestamp()
+      });
+      setReturnTicketModal({ isOpen: false, issue: null });
+    } catch (error) {
+      handleFirestoreError(error, OperationType.UPDATE, `issues/${issue.id}`);
+    }
+  };
+
   const markAsRead = async (id: string) => {
     try {
       await updateDoc(doc(db, 'issues', id), { 
@@ -112,7 +152,8 @@ export default function AllIssuesList() {
         status: issue.status,
         vendorReply: issue.vendorReply || '',
         estRepairTime: issue.estRepairTime || '',
-        vendorCompany: issue.vendorCompany || ''
+        vendorCompany: issue.vendorCompany || '',
+        photoUrls: issue.photoUrls || []
       });
       if (issue.hasUnreadReply) {
         markAsRead(issue.id);
@@ -137,7 +178,8 @@ export default function AllIssuesList() {
   };
 
   const filteredIssues = issues.filter(i => {
-    if (activeTab !== 'all' && i.status !== activeTab) return false;
+    if (activeTab === '未讀回覆' && !i.hasUnreadReply) return false;
+    if (activeTab !== 'all' && activeTab !== '未讀回覆' && i.status !== activeTab) return false;
     if (selectedProjectId !== 'all' && i.warrantyId !== selectedProjectId) return false;
     
     if (searchTerm) {
@@ -291,18 +333,22 @@ export default function AllIssuesList() {
         <>
           {/* Tabs */}
           <div className="flex gap-2 p-1 bg-slate-200/50 rounded-xl overflow-x-auto">
-        {(['all', '未處理', '維修中', '待料中', '已完成'] as const).map(tab => (
+        {(['all', '未讀回覆', '未處理', '維修中', '待料中', '待確認', '已完成'] as const).map(tab => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
             className={cn(
-              "px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition-all flex-1 text-center",
+              "px-4 py-2 rounded-lg text-sm font-bold whitespace-nowrap transition-all flex-1 text-center relative",
               activeTab === tab 
                 ? "bg-white text-slate-800 shadow-sm" 
-                : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50"
+                : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50",
+              tab === '未讀回覆' && "text-red-600 hover:text-red-700"
             )}
           >
             {tab === 'all' ? '所有工單' : tab}
+            {tab === '未讀回覆' && issues.filter(i => i.hasUnreadReply).length > 0 && (
+              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+            )}
           </button>
         ))}
       </div>
@@ -350,8 +396,16 @@ export default function AllIssuesList() {
                       {issue.status}
                     </span>
                     {issue.hasUnreadReply && (
-                      <span className="px-2 py-0.5 text-xs font-bold rounded border bg-red-100 text-red-700 border-red-200 animate-pulse">
-                        新回覆
+                      <span className="flex items-center gap-1">
+                        <span className="px-2 py-0.5 text-xs font-bold rounded border bg-red-100 text-red-700 border-red-200 animate-pulse">
+                          新回覆
+                        </span>
+                        <button
+                          onClick={() => markAsRead(issue.id)}
+                          className="px-2 py-0.5 text-xs font-bold rounded border bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200 transition-colors shadow-sm"
+                        >
+                          標記已讀
+                        </button>
                       </span>
                     )}
                     <span className="text-base md:text-lg font-black text-blue-800 bg-blue-100 px-3 py-1 rounded shadow-sm border border-blue-200">
@@ -386,12 +440,33 @@ export default function AllIssuesList() {
                       </div>
                     )}
                   </h3>
+                  {issue.returnReason && (
+                    <p className="text-sm font-bold text-red-600 mt-2 bg-red-50 p-2 rounded-lg border border-red-100">
+                      退件原因：{issue.returnReason}
+                    </p>
+                  )}
                   <p className="text-sm text-slate-500 mt-2 flex items-center gap-1.5">
                     <Clock className="w-4 h-4" /> 登載日期：{issue.createdAt?.toDate?.().toLocaleDateString('zh-TW')}
                   </p>
                 </div>
                 
                 <div className="flex gap-2">
+                  {issue.status === '待確認' && (
+                    <>
+                      <button
+                        onClick={() => handleConfirmTicket(issue)}
+                        className="px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white text-xs font-bold rounded-lg transition-colors shadow-sm"
+                      >
+                        已確認
+                      </button>
+                      <button
+                        onClick={() => setReturnTicketModal({ isOpen: true, issue: issue })}
+                        className="px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white text-xs font-bold rounded-lg transition-colors shadow-sm"
+                      >
+                        退回工單
+                      </button>
+                    </>
+                  )}
                   <button
                     onClick={() => notifyLine(issue)}
                     className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors border border-transparent hover:border-green-100"
@@ -431,9 +506,10 @@ export default function AllIssuesList() {
                         onChange={e => setEditFormData({...editFormData, status: e.target.value})}
                         className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all bg-white"
                       >
-                        <option value="未處理">未處理</option>
+                         <option value="未處理">未處理</option>
                         <option value="維修中">維修中</option>
                         <option value="待料中">待料中</option>
+                        <option value="待確認">待確認</option>
                         <option value="已完成">已完成</option>
                       </select>
                     </div>
@@ -463,6 +539,10 @@ export default function AllIssuesList() {
                         className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all min-h-[80px]"
                         placeholder="廠商回覆..."
                       />
+                    </div>
+                    <div className="space-y-1 md:col-span-2">
+                      <label className="text-xs font-bold text-slate-500">相關照片上傳</label>
+                      <ImageUpload photoUrls={editFormData.photoUrls} onChange={urls => setEditFormData({...editFormData, photoUrls: urls})} />
                     </div>
                   </div>
                   <div className="flex justify-end gap-2 pt-2">
@@ -498,6 +578,19 @@ export default function AllIssuesList() {
                     <p className="text-[10px] font-bold text-slate-400 mb-1">廠商回覆</p>
                     <p className="text-slate-700">{issue.vendorReply || <span className="text-slate-400 italic">暫無回覆</span>}</p>
                   </div>
+                  
+                  {issue.photoUrls && issue.photoUrls.length > 0 && (
+                    <div className="col-span-1 sm:col-span-3 border-t border-slate-200/60 pt-2 mt-1">
+                      <p className="text-[10px] font-bold text-slate-400 mb-2">相關照片</p>
+                      <div className="flex flex-wrap gap-2">
+                        {issue.photoUrls.map((url, idx) => (
+                          <a key={idx} href={url} target="_blank" rel="noopener noreferrer" className="block w-16 h-16 rounded-lg overflow-hidden border border-slate-200 hover:opacity-80 transition-opacity">
+                            <img src={url} alt="Issue" className="w-full h-full object-cover" />
+                          </a>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -532,6 +625,11 @@ export default function AllIssuesList() {
         message="確定要刪除這筆維修紀錄嗎？此動作無法復原。"
         onConfirm={() => deleteConfirm.id && handleDelete(deleteConfirm.id)}
         onCancel={() => setDeleteConfirm({ isOpen: false, id: null })}
+      />
+      <ReturnTicketModal
+        isOpen={returnTicketModal.isOpen}
+        onClose={() => setReturnTicketModal({ isOpen: false, issue: null })}
+        onSubmit={handleReturnTicket}
       />
     </div>
   );
