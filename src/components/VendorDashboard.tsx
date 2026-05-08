@@ -21,6 +21,7 @@ interface Issue {
   involvedVendors?: string[];
   returnReason?: string;
   photoUrls?: string[];
+  completionPhotoUrls?: string[];
 }
 
 const statusColors = {
@@ -52,6 +53,7 @@ export default function VendorDashboard({ vendorName, initialProjectId }: Vendor
   const [estRepairTime, setEstRepairTime] = useState('');
   const [involveOtherVendors, setInvolveOtherVendors] = useState<string[]>([]);
   const [photoUrls, setPhotoUrls] = useState<string[]>([]);
+  const [completionPhotoUrls, setCompletionPhotoUrls] = useState<string[]>([]);
   const [viewImageUrl, setViewImageUrl] = useState<string | null>(null);
   const [assignedVendor, setAssignedVendor] = useState<string>(''); // For re-assigning joint vendors
   const [updating, setUpdating] = useState(false);
@@ -133,6 +135,7 @@ export default function VendorDashboard({ vendorName, initialProjectId }: Vendor
       setVendorReply(issue.vendorReply || '');
       setEstRepairTime(issue.estRepairTime || '');
       setPhotoUrls(issue.photoUrls || []);
+      setCompletionPhotoUrls((issue as any).completionPhotoUrls || []);
       // Ensure involvedVendors array exists, default to empty
       const existingInvolved = issue.involvedVendors || [];
       // Don't include current vendor in the add-list
@@ -182,6 +185,7 @@ export default function VendorDashboard({ vendorName, initialProjectId }: Vendor
         vendorReply,
         estRepairTime,
         photoUrls,
+        completionPhotoUrls,
         involvedVendors: newInvolvedVendors,
         hasUnreadReply: true,
         updatedAt: serverTimestamp()
@@ -372,8 +376,21 @@ export default function VendorDashboard({ vendorName, initialProjectId }: Vendor
                               <p className="text-[10px] font-bold text-slate-400 mb-2 tracking-wide">相關照片</p>
                               <div className="flex flex-wrap gap-2">
                                 {issue.photoUrls.map((url, idx) => (
-                                  <button key={idx} type="button" onClick={() => setViewImageUrl(url)} className="block w-20 h-20 rounded-lg overflow-hidden border border-slate-200 hover:opacity-80 transition-opacity">
-                                    <img src={url} alt="Issue" className="w-full h-full object-cover" />
+                                  <button key={`photo-${idx}`} type="button" onClick={() => setViewImageUrl(url)} className="block w-20 h-20 rounded-lg overflow-hidden border border-slate-200 hover:opacity-80 transition-opacity flex-shrink-0 bg-black">
+                                    <img src={url} alt="Issue" className="w-full h-full object-contain" />
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          
+                          {(issue as any).completionPhotoUrls && (issue as any).completionPhotoUrls.length > 0 && (
+                            <div>
+                              <p className="text-[10px] font-bold text-emerald-500 mb-2 tracking-wide">完工照片</p>
+                              <div className="flex flex-wrap gap-2">
+                                {(issue as any).completionPhotoUrls.map((url: string, idx: number) => (
+                                  <button key={`comp-${idx}`} type="button" onClick={() => setViewImageUrl(url)} className="block w-20 h-20 rounded-lg overflow-hidden border border-emerald-200 hover:opacity-80 transition-opacity flex-shrink-0 bg-black">
+                                    <img src={url} alt="Completion" className="w-full h-full object-contain" />
                                   </button>
                                 ))}
                               </div>
@@ -471,6 +488,10 @@ export default function VendorDashboard({ vendorName, initialProjectId }: Vendor
                         <div className="space-y-2 md:col-span-2">
                           <label className="text-sm font-bold text-slate-700">相關照片上傳</label>
                           <ImageUpload photoUrls={photoUrls} onChange={setPhotoUrls} />
+                        </div>
+                        <div className="space-y-2 md:col-span-2">
+                          <label className="text-sm font-bold text-slate-700">完工照片上傳</label>
+                          <ImageUpload photoUrls={completionPhotoUrls} onChange={setCompletionPhotoUrls} />
                         </div>
                       </div>
                       <div className="flex gap-3 justify-end bg-slate-50 -mx-5 -mb-5 p-4 mt-6 border-t border-slate-100">

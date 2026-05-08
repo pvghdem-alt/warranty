@@ -41,6 +41,7 @@ service cloud.firestore {
              (!data.keys().hasAny(['estRepairTime']) || (data.estRepairTime is string && data.estRepairTime.size() <= 100)) &&
              (!data.keys().hasAny(['hasUnreadReply']) || (data.hasUnreadReply is bool)) &&
              (!data.keys().hasAny(['photoUrls']) || (data.photoUrls is list && data.photoUrls.size() <= 10)) &&
+             (!data.keys().hasAny(['completionPhotoUrls']) || (data.completionPhotoUrls is list && data.completionPhotoUrls.size() <= 10)) &&
              data.warrantyId is string && data.warrantyId.size() <= 128 && data.warrantyId.matches('^[a-zA-Z0-9_\\-]+$');
     }
 

@@ -23,6 +23,7 @@ interface Issue {
   returnReason?: string;
   involvedVendors?: string[];
   photoUrls?: string[];
+  completionPhotoUrls?: string[];
 }
 
 interface ProjectIssuesModalProps {
@@ -58,6 +59,7 @@ export default function ProjectIssuesModal({ warrantyId, projectName, vendorName
   const [vendorReply, setVendorReply] = useState('');
   const [estRepairTime, setEstRepairTime] = useState('');
   const [photoUrls, setPhotoUrls] = useState<string[]>([]);
+  const [completionPhotoUrls, setCompletionPhotoUrls] = useState<string[]>([]);
   const [viewImageUrl, setViewImageUrl] = useState<string | null>(null);
   
   // Line Notify state
@@ -164,6 +166,7 @@ export default function ProjectIssuesModal({ warrantyId, projectName, vendorName
         estRepairTime,
         warrantyId,
         photoUrls,
+        completionPhotoUrls,
         updatedAt: serverTimestamp()
       };
 
@@ -193,6 +196,7 @@ export default function ProjectIssuesModal({ warrantyId, projectName, vendorName
     setVendorReply(issue.vendorReply || '');
     setEstRepairTime(issue.estRepairTime || '');
     setPhotoUrls(issue.photoUrls || []);
+    setCompletionPhotoUrls((issue as any).completionPhotoUrls || []);
     setShowAddForm(true);
     
     if (issue.hasUnreadReply && issue.id) {
@@ -394,6 +398,11 @@ export default function ProjectIssuesModal({ warrantyId, projectName, vendorName
                   <label className="text-xs font-bold text-slate-500">相關照片上傳</label>
                   <ImageUpload photoUrls={photoUrls} onChange={setPhotoUrls} />
                 </div>
+                
+                <div className="mt-4 col-span-1 md:col-span-2 space-y-1">
+                  <label className="text-xs font-bold text-slate-500">完工照片上傳</label>
+                  <ImageUpload photoUrls={completionPhotoUrls} onChange={setCompletionPhotoUrls} />
+                </div>
 
                 <div className="flex gap-2 mt-6 justify-end">
                   <button
@@ -463,8 +472,18 @@ export default function ProjectIssuesModal({ warrantyId, projectName, vendorName
                       {issue.photoUrls && issue.photoUrls.length > 0 && (
                         <div className="flex flex-wrap gap-2 mt-3">
                           {issue.photoUrls.map((url, idx) => (
-                            <button key={idx} type="button" onClick={() => setViewImageUrl(url)} className="block w-16 h-16 rounded-lg overflow-hidden border border-slate-200 hover:opacity-80 transition-opacity">
-                              <img src={url} alt="Issue" className="w-full h-full object-cover" />
+                            <button key={`photo-${idx}`} type="button" onClick={() => setViewImageUrl(url)} className="block w-16 h-16 rounded-lg overflow-hidden border border-slate-200 hover:opacity-80 transition-opacity bg-black">
+                              <img src={url} alt="Issue" className="w-full h-full object-contain" />
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                      {(issue as any).completionPhotoUrls && (issue as any).completionPhotoUrls.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mt-3">
+                          <p className="text-[10px] w-full font-bold text-emerald-600 mb-1">完工照片：</p>
+                          {(issue as any).completionPhotoUrls.map((url: string, idx: number) => (
+                            <button key={`comp-${idx}`} type="button" onClick={() => setViewImageUrl(url)} className="block w-16 h-16 rounded-lg overflow-hidden border border-emerald-200 hover:opacity-80 transition-opacity bg-black">
+                              <img src={url} alt="Completion" className="w-full h-full object-contain" />
                             </button>
                           ))}
                         </div>

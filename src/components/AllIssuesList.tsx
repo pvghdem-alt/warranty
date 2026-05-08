@@ -24,6 +24,7 @@ interface Issue {
   hasUnreadReply?: boolean;
   returnReason?: string;
   photoUrls?: string[];
+  completionPhotoUrls?: string[];
 }
 
 const statusColors = {
@@ -154,7 +155,8 @@ export default function AllIssuesList() {
         vendorReply: issue.vendorReply || '',
         estRepairTime: issue.estRepairTime || '',
         vendorCompany: issue.vendorCompany || '',
-        photoUrls: issue.photoUrls || []
+        photoUrls: issue.photoUrls || [],
+        completionPhotoUrls: (issue as any).completionPhotoUrls || []
       });
       if (issue.hasUnreadReply) {
         markAsRead(issue.id);
@@ -545,6 +547,10 @@ export default function AllIssuesList() {
                       <label className="text-xs font-bold text-slate-500">相關照片上傳</label>
                       <ImageUpload photoUrls={editFormData.photoUrls} onChange={urls => setEditFormData({...editFormData, photoUrls: urls})} />
                     </div>
+                    <div className="space-y-1 md:col-span-2">
+                      <label className="text-xs font-bold text-slate-500">完工照片上傳</label>
+                      <ImageUpload photoUrls={editFormData.completionPhotoUrls} onChange={urls => setEditFormData({...editFormData, completionPhotoUrls: urls})} />
+                    </div>
                   </div>
                   <div className="flex justify-end gap-2 pt-2">
                     <button
@@ -585,8 +591,20 @@ export default function AllIssuesList() {
                       <p className="text-[10px] font-bold text-slate-400 mb-2">相關照片</p>
                       <div className="flex flex-wrap gap-2">
                         {issue.photoUrls.map((url, idx) => (
-                          <button key={idx} type="button" onClick={() => setViewImageUrl(url)} className="block w-16 h-16 rounded-lg overflow-hidden border border-slate-200 hover:opacity-80 transition-opacity">
-                            <img src={url} alt="Issue" className="w-full h-full object-cover" />
+                          <button key={`photo-${idx}`} type="button" onClick={() => setViewImageUrl(url)} className="block w-16 h-16 rounded-lg overflow-hidden border border-slate-200 hover:opacity-80 transition-opacity bg-black">
+                            <img src={url} alt="Issue" className="w-full h-full object-contain" />
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {(issue as any).completionPhotoUrls && (issue as any).completionPhotoUrls.length > 0 && (
+                    <div className="col-span-1 sm:col-span-3 border-t border-slate-200/60 pt-2 mt-1">
+                      <p className="text-[10px] font-bold text-emerald-500 mb-2">完工照片</p>
+                      <div className="flex flex-wrap gap-2">
+                        {(issue as any).completionPhotoUrls.map((url: string, idx: number) => (
+                          <button key={`comp-${idx}`} type="button" onClick={() => setViewImageUrl(url)} className="block w-16 h-16 rounded-lg overflow-hidden border border-emerald-200 hover:opacity-80 transition-opacity bg-black">
+                            <img src={url} alt="Completion" className="w-full h-full object-contain" />
                           </button>
                         ))}
                       </div>
