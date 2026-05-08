@@ -136,7 +136,7 @@ export default function ProjectIssuesModal({ warrantyId, projectName, vendorName
       }).join('\n');
 
       const baseUrl = window.location.origin + window.location.pathname;
-      const vendorDashboardLink = `${baseUrl}?vendor=${encodeURIComponent(vendor)}`;
+      const vendorDashboardLink = `${baseUrl}?vendor=${vendor}`;
 
       const messageText = `✨ 【新增維修工單】\n專案：${projectName}\n項目：${newIssueName}\n\n⚠️ 目前您共有 ${unfinishedIssues.length} 張工單尚未處理：\n${listStr}\n\n廠商您好，這是您的專屬維修管理列表頁面，請點擊連結查看並更新所有工單狀態：\n${vendorDashboardLink}`;
 

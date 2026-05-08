@@ -21,11 +21,14 @@ import {
   Construction,
   Building2,
   Wrench,
-  ExternalLink
+  ExternalLink,
+  Bell
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import ProjectIssuesModal from './ProjectIssuesModal';
 import ConfirmModal from './ConfirmModal';
+
+import ProjectNotifyModal from './ProjectNotifyModal';
 
 export interface Issue {
   id?: string;
@@ -33,6 +36,7 @@ export interface Issue {
   vendorCompany: string;
   issueName: string;
   status: '未處理' | '維修中' | '待料中' | '已完成';
+  createdAt?: any;
 }
 
 interface WarrantyListProps {
@@ -45,6 +49,7 @@ export default function WarrantyList({ onEdit }: WarrantyListProps) {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedProjectForIssues, setSelectedProjectForIssues] = useState<{id: string, name: string, vendor: string} | null>(null);
+  const [selectedProjectForNotify, setSelectedProjectForNotify] = useState<{id: string, name: string} | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; id: string | null }>({ isOpen: false, id: null });
 
   useEffect(() => {
@@ -123,6 +128,15 @@ export default function WarrantyList({ onEdit }: WarrantyListProps) {
             projectName={selectedProjectForIssues.name}
             vendorName={selectedProjectForIssues.vendor}
             onClose={() => setSelectedProjectForIssues(null)}
+          />
+        )}
+        {selectedProjectForNotify && (
+          <ProjectNotifyModal
+            isOpen={true}
+            onClose={() => setSelectedProjectForNotify(null)}
+            projectName={selectedProjectForNotify.name}
+            warrantyId={selectedProjectForNotify.id}
+            issues={issues.filter(i => i.warrantyId === selectedProjectForNotify.id)}
           />
         )}
       </AnimatePresence>
@@ -262,6 +276,13 @@ export default function WarrantyList({ onEdit }: WarrantyListProps) {
                             title="維修管理"
                           >
                             <Wrench className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => w.id && setSelectedProjectForNotify({ id: w.id, name: w.projectName })}
+                            className="p-2 text-slate-400 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition-all"
+                            title="寄發進度通知"
+                          >
+                            <Bell className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => onEdit(w)}
