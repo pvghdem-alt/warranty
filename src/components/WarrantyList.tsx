@@ -154,18 +154,18 @@ export default function WarrantyList({ onEdit }: WarrantyListProps) {
       </div>
 
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-slate-50/80 border-b border-slate-200">
-                <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">工程資訊</th>
-                <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">保固到期日</th>
-                <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">保固金</th>
-                <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider">狀態 / 備註</th>
-                <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">管理</th>
+        <div className="md:overflow-x-visible">
+          <table className="w-full text-left border-collapse block md:table">
+            <thead className="hidden md:table-header-group">
+              <tr className="bg-slate-50/80 border-b border-slate-200 block md:table-row">
+                <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider block md:table-cell">工程資訊</th>
+                <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center block md:table-cell">保固到期日</th>
+                <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right block md:table-cell">保固金</th>
+                <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider block md:table-cell">狀態 / 備註</th>
+                <th className="p-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center block md:table-cell">管理</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="block md:table-row-group md:divide-y divide-slate-100">
               <AnimatePresence mode="popLayout">
                 {filteredWarranties.map((w) => {
                   const status = getExpiryStatus(w.expiryDate.toDate(), w.hasIssue);
@@ -178,11 +178,11 @@ export default function WarrantyList({ onEdit }: WarrantyListProps) {
                       exit={{ opacity: 0, scale: 0.95 }}
                       key={w.id}
                       className={cn(
-                        "group transition-colors",
+                        "group transition-colors block md:table-row p-4 md:p-0 border-b border-slate-100 last:border-0",
                         w.hasIssue ? "bg-red-50/30 hover:bg-red-50/50" : "hover:bg-slate-50"
                       )}
                     >
-                      <td className="p-4">
+                      <td className="block md:table-cell p-0 md:p-4 pb-3 md:pb-4 border-b border-dashed border-slate-200 md:border-none">
                         <div className="flex items-start gap-3">
                           <div className={cn(
                             "p-2 rounded-lg mt-1",
@@ -228,22 +228,28 @@ export default function WarrantyList({ onEdit }: WarrantyListProps) {
                           </div>
                         </div>
                       </td>
-                      <td className="p-4 text-center align-top pt-5">
-                        <div className="text-sm font-semibold text-slate-700">{toROCDate(w.expiryDate.toDate())}</div>
-                        <div className={cn("text-[11px] mt-1 flex items-center justify-center gap-1", status.color)}>
-                          <Clock className="w-3 h-3" /> {status.label}
+                      <td className="flex items-center justify-between md:table-cell p-0 md:p-4 mt-3 md:mt-0 text-left md:text-center align-top md:pt-5">
+                        <span className="md:hidden text-xs font-bold text-slate-500">保固到期日：</span>
+                        <div className="text-right md:text-center">
+                          <div className="text-sm font-semibold text-slate-700">{toROCDate(w.expiryDate.toDate())}</div>
+                          <div className={cn("text-[11px] mt-1 flex justify-end md:justify-center items-center gap-1", status.color)}>
+                            <Clock className="w-3 h-3" /> {status.label}
+                          </div>
                         </div>
                       </td>
-                      <td className="p-4 text-right align-top pt-5">
-                        <div className="text-sm font-bold text-slate-800">{formatCurrency(w.deposit)}</div>
-                        <div className={cn(
-                          "text-[10px] mt-1 font-medium",
-                          w.isRefunded ? "text-blue-600" : "text-slate-400"
-                        )}>
-                          {w.isRefunded ? '✅ 已退款' : '⏳ 未退款'}
+                      <td className="flex items-center justify-between md:table-cell p-0 md:p-4 mt-2 md:mt-0 text-right align-top md:pt-5">
+                        <span className="md:hidden text-xs font-bold text-slate-500">保固金：</span>
+                        <div className="text-right">
+                          <div className="text-sm font-bold text-slate-800">{formatCurrency(w.deposit)}</div>
+                          <div className={cn(
+                            "text-[10px] mt-1 font-medium",
+                            w.isRefunded ? "text-blue-600" : "text-slate-400"
+                          )}>
+                            {w.isRefunded ? '✅ 已退款' : '⏳ 未退款'}
+                          </div>
                         </div>
                       </td>
-                      <td className="p-4 max-w-xs align-top">
+                      <td className="block md:table-cell p-0 md:p-4 mt-3 md:mt-0 pt-3 md:pt-4 border-t border-dashed border-slate-200 md:border-none md:max-w-xs align-top">
                         <div className="mb-2">
                           {w.hasIssue ? (
                             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-red-100 text-red-700 text-[10px] font-extrabold uppercase">
@@ -259,44 +265,48 @@ export default function WarrantyList({ onEdit }: WarrantyListProps) {
                             </span>
                           )}
                         </div>
-                        <div className="text-[11px] text-slate-500 italic line-clamp-2">
+                        <div className="text-[11px] text-slate-500 italic line-clamp-2 md:line-clamp-3">
                           {w.issueRemark || '無備註'}
                         </div>
                         {w.warrantyScope && (
-                          <div className="mt-2 text-[10px] bg-indigo-50 text-indigo-700 px-2 py-1 rounded border border-indigo-100 line-clamp-3">
+                          <div className="mt-2 text-[10px] bg-indigo-50 text-indigo-700 px-2 py-1 rounded border border-indigo-100 line-clamp-2 md:line-clamp-3">
                             <span className="font-bold">保固範圍：</span>{w.warrantyScope}
                           </div>
                         )}
                       </td>
-                      <td className="p-4 align-top pt-5">
-                        <div className="flex justify-center items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <td className="block md:table-cell p-0 md:p-4 mt-4 md:mt-0 pt-3 md:pt-5 border-t border-slate-100 md:border-none align-top">
+                        <div className="flex justify-end md:justify-center items-center gap-2 md:opacity-0 group-hover:opacity-100 transition-opacity">
                           <button
                             onClick={() => w.id && setSelectedProjectForIssues({ id: w.id, name: w.projectName, vendor: w.vendor })}
-                            className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
+                            className="flex-1 md:flex-none p-2 text-slate-400 hover:text-indigo-600 bg-slate-50 md:bg-transparent hover:bg-indigo-50 rounded-lg transition-all flex justify-center items-center gap-1"
                             title="維修管理"
                           >
                             <Wrench className="w-4 h-4" />
+                            <span className="md:hidden text-xs">維修</span>
                           </button>
                           <button
                             onClick={() => w.id && setSelectedProjectForNotify({ id: w.id, name: w.projectName })}
-                            className="p-2 text-slate-400 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition-all"
+                            className="flex-1 md:flex-none p-2 text-slate-400 hover:text-orange-600 bg-slate-50 md:bg-transparent hover:bg-orange-50 rounded-lg transition-all flex justify-center items-center gap-1"
                             title="寄發進度通知"
                           >
                             <Bell className="w-4 h-4" />
+                            <span className="md:hidden text-xs">催修</span>
                           </button>
                           <button
                             onClick={() => onEdit(w)}
-                            className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                            className="flex-1 md:flex-none p-2 text-slate-400 hover:text-blue-600 bg-slate-50 md:bg-transparent hover:bg-blue-50 rounded-lg transition-all flex justify-center items-center gap-1"
                             title="修改"
                           >
                             <Edit3 className="w-4 h-4" />
+                            <span className="md:hidden text-xs">修改</span>
                           </button>
                           <button
                             onClick={() => w.id && setDeleteConfirm({ isOpen: true, id: w.id })}
-                            className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                            className="flex-1 md:flex-none p-2 text-slate-400 hover:text-red-600 bg-slate-50 md:bg-transparent hover:bg-red-50 rounded-lg transition-all flex justify-center items-center gap-1"
                             title="刪除"
                           >
                             <Trash2 className="w-4 h-4" />
+                            <span className="md:hidden text-xs">刪除</span>
                           </button>
                         </div>
                       </td>

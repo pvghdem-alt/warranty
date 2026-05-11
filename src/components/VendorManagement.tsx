@@ -116,68 +116,68 @@ export default function VendorManagement() {
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm text-slate-600">
-            <thead className="bg-slate-50 border-b border-slate-100 text-slate-500 font-semibold">
-              <tr>
-                <th className="px-6 py-4">廠商名稱</th>
-                <th className="px-6 py-4">LINE User ID</th>
-                <th className="px-6 py-4 text-right">操作</th>
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 md:overflow-hidden">
+        <table className="w-full text-left text-sm text-slate-600 block md:table">
+          <thead className="bg-slate-50 border-b border-slate-100 text-slate-500 font-semibold hidden md:table-header-group">
+            <tr className="block md:table-row">
+              <th className="px-6 py-4 block md:table-cell">廠商名稱</th>
+              <th className="px-6 py-4 block md:table-cell">LINE User ID</th>
+              <th className="px-6 py-4 text-right block md:table-cell">操作</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100 block md:table-row-group">
+            {vendors.length === 0 ? (
+              <tr className="block md:table-row">
+                <td colSpan={3} className="px-6 py-8 text-center text-slate-400 block md:table-cell">尚無廠商資料</td>
               </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {vendors.length === 0 ? (
-                <tr>
-                  <td colSpan={3} className="px-6 py-8 text-center text-slate-400">尚無廠商資料</td>
-                </tr>
-              ) : (
-                vendors.map((vendor, idx) => {
-                  const isEditing = editingId === vendor.companyName;
-                  
-                  return (
-                    <React.Fragment key={idx}>
-                      <tr className="hover:bg-slate-50/50 transition-colors">
-                        <td className="px-6 py-4 font-bold text-slate-800">
-                          {vendor.companyName}
-                        </td>
-                        <td className="px-6 py-4">
-                          {vendor.lineUserId ? (
-                            <span className="font-mono text-xs bg-slate-100 px-2 py-1 rounded text-slate-600">
-                              {vendor.lineUserId}
-                            </span>
-                          ) : (
-                            <span className="text-slate-400 italic text-xs">尚未設定</span>
-                          )}
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                          <button
-                            onClick={() => {
-                              if (isEditing) {
-                                setEditingId(null);
-                                setShowRecent(null);
-                              } else {
-                                setEditingId(vendor.companyName);
-                                setEditValue(vendor.lineUserId);
-                                setShowRecent(null);
-                              }
-                            }}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 hover:border-blue-300 hover:text-blue-600  text-slate-600 rounded-lg font-bold transition-all text-xs"
-                          >
-                            <Settings className="w-3.5 h-3.5" />
-                            {isEditing ? '取消設定' : '設定 LINE ID'}
-                          </button>
-                        </td>
-                      </tr>
-                      
-                      {/* Editing Panel */}
-                      {isEditing && (
-                        <tr>
-                          <td colSpan={3} className="px-0 py-0 border-b-2 border-blue-500">
-                            <motion.div 
-                              initial={{ opacity: 0, height: 0 }}
-                              animate={{ opacity: 1, height: 'auto' }}
-                              className="bg-blue-50/30 p-6 shadow-inner"
+            ) : (
+              vendors.map((vendor, idx) => {
+                const isEditing = editingId === vendor.companyName;
+                
+                return (
+                  <React.Fragment key={idx}>
+                    <tr className="hover:bg-slate-50/50 transition-colors block md:table-row p-4 md:p-0">
+                      <td className="px-0 pb-2 md:px-6 md:py-4 font-bold text-slate-800 block md:table-cell text-lg md:text-sm border-b border-dashed border-slate-200 md:border-none mb-2 md:mb-0">
+                        {vendor.companyName}
+                      </td>
+                      <td className="flex justify-between items-center md:table-cell px-0 py-2 md:px-6 md:py-4 block md:table-cell">
+                        <span className="md:hidden text-xs text-slate-500 font-bold">LINE ID</span>
+                        {vendor.lineUserId ? (
+                          <span className="font-mono text-xs bg-slate-100 px-2 py-1 rounded text-slate-600">
+                            {vendor.lineUserId}
+                          </span>
+                        ) : (
+                          <span className="text-slate-400 italic text-xs">尚未設定</span>
+                        )}
+                      </td>
+                      <td className="flex justify-end block md:table-cell px-0 pt-2 md:px-6 md:py-4 text-right mt-2 md:mt-0">
+                        <button
+                          onClick={() => {
+                            if (isEditing) {
+                              setEditingId(null);
+                              setShowRecent(null);
+                            } else {
+                              setEditingId(vendor.companyName);
+                              setEditValue(vendor.lineUserId);
+                              setShowRecent(null);
+                            }
+                          }}
+                          className="inline-flex w-full md:w-auto items-center justify-center gap-1.5 px-3 py-2 md:py-1.5 bg-white border border-slate-200 hover:border-blue-300 hover:text-blue-600  text-slate-600 rounded-lg font-bold transition-all text-sm md:text-xs"
+                        >
+                          <Settings className="w-4 h-4 md:w-3.5 md:h-3.5" />
+                          {isEditing ? '取消設定' : '設定 LINE ID'}
+                        </button>
+                      </td>
+                    </tr>
+                    
+                    {/* Editing Panel */}
+                    {isEditing && (
+                      <tr className="block md:table-row">
+                        <td colSpan={3} className="px-0 py-0 border-b-2 border-blue-500 block md:table-cell">
+                          <motion.div 
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            className="bg-blue-50/30 p-4 md:p-6 shadow-inner"
                             >
                               <div className="max-w-2xl mx-auto space-y-4">
                                 
@@ -254,7 +254,6 @@ export default function VendorManagement() {
               )}
             </tbody>
           </table>
-        </div>
       </div>
     </div>
   );

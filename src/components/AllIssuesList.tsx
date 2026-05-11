@@ -261,53 +261,75 @@ export default function AllIssuesList() {
       </div>
 
       {viewMode === 'stats' ? (
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-slate-50 border-b border-slate-200">
-                <th className="p-4 font-bold text-slate-500 text-sm">廠商名稱</th>
-                <th className="p-4 font-bold text-slate-500 text-sm text-center">總工單數</th>
-                <th className="p-4 font-bold text-slate-500 text-sm text-center">未處理</th>
-                <th className="p-4 font-bold text-slate-500 text-sm text-center">維修中</th>
-                <th className="p-4 font-bold text-slate-500 text-sm text-center">待料中</th>
-                <th className="p-4 font-bold text-slate-500 text-sm text-center">已完成</th>
-                <th className="p-4 font-bold text-slate-500 text-sm text-center">廠商專頁</th>
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 md:overflow-hidden">
+          <table className="w-full text-left border-collapse block md:table">
+            <thead className="hidden md:table-header-group">
+              <tr className="bg-slate-50 border-b border-slate-200 md:table-row">
+                <th className="p-4 font-bold text-slate-500 text-sm md:table-cell">廠商名稱</th>
+                <th className="p-4 font-bold text-slate-500 text-sm text-center md:table-cell">總工單數</th>
+                <th className="p-4 font-bold text-slate-500 text-sm text-center md:table-cell">未處理</th>
+                <th className="p-4 font-bold text-slate-500 text-sm text-center md:table-cell">維修中</th>
+                <th className="p-4 font-bold text-slate-500 text-sm text-center md:table-cell">待料中</th>
+                <th className="p-4 font-bold text-slate-500 text-sm text-center md:table-cell">已完成</th>
+                <th className="p-4 font-bold text-slate-500 text-sm text-center md:table-cell">廠商專頁</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="block md:table-row-group divide-y divide-slate-100">
               {vendorStats.map(([vendor, stat]) => (
-                <tr key={vendor} className="hover:bg-slate-50 transition-colors">
-                  <td className="p-4 font-bold text-slate-800">{vendor}</td>
-                  <td className="p-4 text-center font-bold">{stat.total}</td>
-                  <td className="p-4 text-center">
+                <tr key={vendor} className="block md:table-row hover:bg-slate-50/50 transition-colors p-4 md:p-0">
+                  <td className="flex md:table-cell justify-between items-center p-0 pb-3 md:p-4 font-bold text-slate-800 border-b border-dashed border-slate-200 md:border-none mb-3 md:mb-0">
+                    <span className="text-lg md:text-base">{vendor}</span>
+                    <a 
+                      href={`/?vendor=${encodeURIComponent(vendor)}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="md:hidden inline-flex items-center justify-center p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                      title="開啟廠商專屬頁面"
+                      onClick={(e) => {
+                        const url = `${window.location.origin}/?vendor=${vendor}`;
+                        navigator.clipboard.writeText(url).catch(() => {});
+                      }}
+                    >
+                      <ExternalLink className="w-5 h-5" />
+                    </a>
+                  </td>
+                  <td className="flex md:table-cell justify-between items-center p-0 py-2 md:p-4 text-center font-bold">
+                    <span className="md:hidden text-slate-500 font-normal text-sm">總工單數</span>
+                    {stat.total}
+                  </td>
+                  <td className="flex md:table-cell justify-between items-center p-0 py-2 md:p-4 text-center">
+                    <span className="md:hidden text-slate-500 font-normal text-sm">未處理</span>
                     {stat.unhandled > 0 ? (
                       <span className="inline-block bg-red-100 text-red-700 px-2 py-1 rounded font-bold text-sm">
                         {stat.unhandled}
                       </span>
                     ) : '-'}
                   </td>
-                  <td className="p-4 text-center">
+                  <td className="flex md:table-cell justify-between items-center p-0 py-2 md:p-4 text-center">
+                    <span className="md:hidden text-slate-500 font-normal text-sm">維修中</span>
                     {stat.fixing > 0 ? (
                       <span className="inline-block bg-orange-100 text-orange-700 px-2 py-1 rounded font-bold text-sm">
                         {stat.fixing}
                       </span>
                     ) : '-'}
                   </td>
-                  <td className="p-4 text-center">
+                  <td className="flex md:table-cell justify-between items-center p-0 py-2 md:p-4 text-center">
+                    <span className="md:hidden text-slate-500 font-normal text-sm">待料中</span>
                     {stat.waiting > 0 ? (
                       <span className="inline-block bg-yellow-100 text-yellow-700 px-2 py-1 rounded font-bold text-sm">
                         {stat.waiting}
                       </span>
                     ) : '-'}
                   </td>
-                  <td className="p-4 text-center">
+                  <td className="flex md:table-cell justify-between items-center p-0 py-2 md:p-4 text-center">
+                    <span className="md:hidden text-slate-500 font-normal text-sm">已完成</span>
                     {stat.done > 0 ? (
                       <span className="inline-block bg-green-100 text-green-700 px-2 py-1 rounded font-bold text-sm">
                         {stat.done}
                       </span>
                     ) : '-'}
                   </td>
-                  <td className="p-4 text-center">
+                  <td className="hidden md:table-cell p-4 text-center">
                     <a 
                       href={`/?vendor=${encodeURIComponent(vendor)}`}
                       target="_blank"
@@ -325,8 +347,8 @@ export default function AllIssuesList() {
                 </tr>
               ))}
               {vendorStats.length === 0 && (
-                <tr>
-                  <td colSpan={7} className="p-8 text-center text-slate-400">目前沒有任何廠商統計資料</td>
+                <tr className="block md:table-row">
+                  <td colSpan={7} className="block md:table-cell p-8 text-center text-slate-400">目前沒有任何廠商統計資料</td>
                 </tr>
               )}
             </tbody>
