@@ -63,6 +63,7 @@ export default function WarrantyList({ onEdit }: WarrantyListProps) {
         ...doc.data()
       })) as Warranty[];
       setWarranties(data);
+      setLoading(false);
     }, (error) => {
       console.error('Firestore Read Warranties Error:', error);
       setErrorMsg(`讀取保固清單連線異常：${parseFirestoreErrorToUserMsg(error)}`);
