@@ -1,24 +1,55 @@
-import React, { useState, useMemo } from 'react';
-import { X, MessageCircle, AlertTriangle, Send } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { X, MessageCircle, AlertTriangle, Send, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Issue } from './WarrantyList';
+import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
+import { db, parseFirestoreErrorToUserMsg } from '../lib/firebase';
+import { Issue } from '../types';
 
 interface ProjectNotifyModalProps {
   isOpen: boolean;
   onClose: () => void;
   projectName: string;
   warrantyId: string;
-  issues: Issue[];
 }
 
 export default function ProjectNotifyModal({
   isOpen,
   onClose,
   projectName,
-  warrantyId,
-  issues
+  warrantyId
 }: ProjectNotifyModalProps) {
-  if (!isOpen) return null;
+  const [issues, setIssues] = useState<Issue[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const fetchIssues = async () => {
+      setLoading(true);
+      setErrorMsg(null);
+      try {
+        const q = query(
+          collection(db, 'issues'),
+          where('warrantyId', '==', warrantyId),
+          orderBy('createdAt', 'desc')
+        );
+        const snapshot = await getDocs(q);
+        const data = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        })) as Issue[];
+        setIssues(data);
+      } catch (error) {
+        console.error('Error fetching project issues:', error);
+        setErrorMsg(`讀取工單失敗：${parseFirestoreErrorToUserMsg(error)}`);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchIssues();
+  }, [isOpen, warrantyId]);
 
   // Group unfinished issues by vendor
   const groupedIssues = useMemo(() => {
@@ -34,6 +65,8 @@ export default function ProjectNotifyModal({
       issues: vendorIssues
     }));
   }, [issues]);
+
+  if (!isOpen) return null;
 
   const handleManualSend = (vendor: string, vendorIssues: any[]) => {
     const today = new Date();
@@ -127,7 +160,16 @@ export default function ProjectNotifyModal({
         </div>
 
         <div className="p-6 overflow-y-auto flex-1 bg-slate-50/50">
-          {groupedIssues.length === 0 ? (
+          {loading ? (
+            <div className="flex flex-col items-center justify-center py-12 space-y-4">
+              <Loader2 className="w-10 h-10 animate-spin text-orange-500" />
+              <p className="text-slate-500">載入工單紀錄中...</p>
+            </div>
+          ) : errorMsg ? (
+             <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl text-sm font-bold text-center">
+               {errorMsg}
+             </div>
+          ) : groupedIssues.length === 0 ? (
             <div className="text-center py-12">
               <div className="w-16 h-16 bg-green-100 text-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Send className="w-8 h-8" />

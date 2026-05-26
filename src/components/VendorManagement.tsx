@@ -3,6 +3,7 @@ import { collection, getDocs, doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { Users, Info, Settings, Save, Smartphone, Copy } from 'lucide-react';
 import { motion } from 'motion/react';
+import DataMigrationTool from './DataMigrationTool';
 
 interface VendorData {
   companyName: string;
@@ -255,6 +256,8 @@ export default function VendorManagement() {
             </tbody>
           </table>
       </div>
+
+      <DataMigrationTool />
     </div>
   );
 }

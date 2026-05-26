@@ -45,7 +45,6 @@ interface WarrantyListProps {
 
 export default function WarrantyList({ onEdit }: WarrantyListProps) {
   const [warranties, setWarranties] = useState<Warranty[]>([]);
-  const [issues, setIssues] = useState<Issue[]>([]);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -70,23 +69,8 @@ export default function WarrantyList({ onEdit }: WarrantyListProps) {
       setLoading(false);
     });
 
-    const iq = query(collection(db, 'issues'));
-    const unsubscribeI = onSnapshot(iq, (snapshot) => {
-      const data = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as Issue[];
-      setIssues(data);
-      setLoading(false);
-    }, (error) => {
-      console.error('Firestore Read Issues Error:', error);
-      setErrorMsg(`讀取維修工單連線異常：${parseFirestoreErrorToUserMsg(error)}`);
-      setLoading(false);
-    });
-
     return () => {
       unsubscribeW();
-      unsubscribeI();
     };
   }, []);
 
@@ -104,19 +88,6 @@ export default function WarrantyList({ onEdit }: WarrantyListProps) {
     w.vendor.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (w.issueRemark || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
-
-  const getIssueStats = (warrantyId: string) => {
-    const projectIssues = issues.filter(i => i.warrantyId === warrantyId);
-    if (!projectIssues.length) return null;
-    
-    const unhandled = projectIssues.filter(i => i.status === '未處理').length;
-    const fixing = projectIssues.filter(i => i.status === '維修中').length;
-    const waiting = projectIssues.filter(i => i.status === '待料中').length;
-    const done = projectIssues.filter(i => i.status === '已完成').length;
-    const total = projectIssues.length;
-    
-    return { unhandled, fixing, waiting, done, total };
-  };
 
   if (loading) {
     return (
@@ -154,7 +125,6 @@ export default function WarrantyList({ onEdit }: WarrantyListProps) {
             onClose={() => setSelectedProjectForNotify(null)}
             projectName={selectedProjectForNotify.name}
             warrantyId={selectedProjectForNotify.id}
-            issues={issues.filter(i => i.warrantyId === selectedProjectForNotify.id)}
           />
         )}
       </AnimatePresence>
@@ -187,7 +157,6 @@ export default function WarrantyList({ onEdit }: WarrantyListProps) {
               <AnimatePresence mode="popLayout">
                 {filteredWarranties.map((w) => {
                   const status = getExpiryStatus(w.expiryDate.toDate(), w.hasIssue);
-                  const stats = getIssueStats(w.id!);
                   return (
                     <motion.tr
                       layout
@@ -235,14 +204,6 @@ export default function WarrantyList({ onEdit }: WarrantyListProps) {
                                 </div>
                               ) : '未知廠商'}
                             </div>
-                            {stats && (
-                              <div className="mt-2 flex flex-wrap gap-2 text-[10px] font-bold">
-                                {stats.unhandled > 0 && <span className="bg-red-100 text-red-700 px-1.5 py-0.5 rounded">未處理：{stats.unhandled}</span>}
-                                {stats.fixing > 0 && <span className="bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded">維修中：{stats.fixing}</span>}
-                                {stats.waiting > 0 && <span className="bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded">待料中：{stats.waiting}</span>}
-                                {stats.done > 0 && <span className="bg-green-100 text-green-700 px-1.5 py-0.5 rounded">已完成：{stats.done}</span>}
-                              </div>
-                            )}
                           </div>
                         </div>
                       </td>
