@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { collection, onSnapshot, query, orderBy, getDocs, doc, updateDoc, deleteDoc, serverTimestamp, getDoc } from 'firebase/firestore';
-import { db, handleFirestoreError, OperationType } from '../lib/firebase';
+import { db, handleFirestoreError, OperationType, parseFirestoreErrorToUserMsg } from '../lib/firebase';
 import { Edit3, Trash2, Search, MessageCircle, AlertCircle, Clock, Construction, Wrench, BarChart2, ListTodo, ExternalLink, Building2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
@@ -90,7 +90,7 @@ export default function AllIssuesList() {
       setLoading(false);
     }, (error) => {
       console.error('AllIssuesList issues snapshot error:', error);
-      setErrorMsg(`讀取維修工單連線異常：${error.message || error}`);
+      setErrorMsg(`讀取維修工單連線異常：${parseFirestoreErrorToUserMsg(error)}`);
       setLoading(false);
     });
 

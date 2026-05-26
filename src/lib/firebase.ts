@@ -37,6 +37,14 @@ export interface FirestoreErrorInfo {
   }
 }
 
+export function parseFirestoreErrorToUserMsg(error: unknown): string {
+  const msg = error instanceof Error ? error.message : String(error);
+  if (msg.includes('Quota') || msg.includes('quota') || msg.includes('resource-exhausted')) {
+    return 'Firebase 資料庫免費讀取配額已耗盡 (Quota limit exceeded)。請聯絡系統管理員升級 Firebase 方案至 Blaze 或等候隔日配額重置。';
+  }
+  return msg;
+}
+
 export function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
   const errInfo: FirestoreErrorInfo = {
     error: error instanceof Error ? error.message : String(error),

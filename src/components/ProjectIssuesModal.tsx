@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Plus, Edit3, Trash2, MessageCircle, AlertCircle, CheckCircle, Clock, Construction, Users } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { collection, addDoc, onSnapshot, query, orderBy, deleteDoc, doc, updateDoc, serverTimestamp, where, getDocs, getDoc } from 'firebase/firestore';
-import { db, handleFirestoreError, OperationType } from '../lib/firebase';
+import { db, handleFirestoreError, OperationType, parseFirestoreErrorToUserMsg } from '../lib/firebase';
 import LineNotifyModal from './LineNotifyModal';
 import ConfirmModal from './ConfirmModal';
 import ReturnTicketModal from './ReturnTicketModal';
@@ -43,6 +43,7 @@ const statusColors = {
 
 export default function ProjectIssuesModal({ warrantyId, projectName, vendorName, onClose }: ProjectIssuesModalProps) {
   const [issues, setIssues] = useState<Issue[]>([]);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; id: string | null }>({ isOpen: false, id: null });
@@ -90,7 +91,8 @@ export default function ProjectIssuesModal({ warrantyId, projectName, vendorName
       setIssues(data);
       setLoading(false);
     }, (error) => {
-      handleFirestoreError(error, OperationType.LIST, 'issues');
+      console.error(error);
+      setErrorMsg(parseFirestoreErrorToUserMsg(error));
       setLoading(false);
     });
 
@@ -450,6 +452,23 @@ export default function ProjectIssuesModal({ warrantyId, projectName, vendorName
                   </button>
                 </div>
               </motion.form>
+            )}
+          </AnimatePresence>
+
+          <AnimatePresence>
+            {errorMsg && (
+              <motion.div 
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="bg-amber-50 border border-amber-200 text-amber-900 rounded-2xl p-4 flex items-start gap-3 shadow-sm text-sm font-semibold mb-6"
+              >
+                <AlertCircle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5 animate-bounce" />
+                <div className="space-y-1">
+                  <p className="font-bold">資料讀取異常</p>
+                  <p className="text-xs text-amber-700">{errorMsg}</p>
+                </div>
+              </motion.div>
             )}
           </AnimatePresence>
 

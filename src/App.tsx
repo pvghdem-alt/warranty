@@ -52,6 +52,8 @@ export default function App() {
     const q = query(collection(db, 'issues'), where('hasUnreadReply', '==', true));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       setUnreadIssuesCount(snapshot.docs.length);
+    }, (err) => {
+      console.error("Unread issues count error:", err);
     });
     return () => unsubscribe();
   }, [isVendorDashboard, user]);

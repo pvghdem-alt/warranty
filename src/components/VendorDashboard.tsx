@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { collection, query, where, onSnapshot, getDocs, doc, updateDoc, serverTimestamp, getDoc, or } from 'firebase/firestore';
-import { db, handleFirestoreError, OperationType } from '../lib/firebase';
+import { db, handleFirestoreError, OperationType, parseFirestoreErrorToUserMsg } from '../lib/firebase';
 import { ShieldCheck, CheckCircle2, AlertCircle, Clock, Construction } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
@@ -39,6 +39,7 @@ interface VendorDashboardProps {
 
 export default function VendorDashboard({ vendorName, initialProjectId }: VendorDashboardProps) {
   const [issues, setIssues] = useState<Issue[]>([]);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [projectsMap, setProjectsMap] = useState<Record<string, string>>({});
   const [projectVendors, setProjectVendors] = useState<Record<string, string[]>>({});
@@ -119,7 +120,8 @@ export default function VendorDashboard({ vendorName, initialProjectId }: Vendor
       setIssues(data);
       setLoading(false);
     }, (error) => {
-      handleFirestoreError(error, OperationType.LIST, 'issues');
+      console.error(error);
+      setErrorMsg(parseFirestoreErrorToUserMsg(error));
       setLoading(false);
     });
 
@@ -228,6 +230,20 @@ export default function VendorDashboard({ vendorName, initialProjectId }: Vendor
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
         <div className="w-12 h-12 border-4 border-slate-600 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
+  if (errorMsg) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex justify-center p-8">
+        <div className="bg-amber-50 border border-amber-200 text-amber-900 rounded-2xl p-6 flex items-start gap-3 shadow-sm font-semibold max-w-2xl w-full">
+          <AlertCircle className="w-6 h-6 text-amber-500 shrink-0 mt-0.5 animate-bounce" />
+          <div className="space-y-1">
+            <p className="font-bold text-lg">資料讀取異常</p>
+            <p className="text-amber-700">{errorMsg}</p>
+          </div>
+        </div>
       </div>
     );
   }

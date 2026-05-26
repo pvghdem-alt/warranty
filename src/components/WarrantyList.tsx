@@ -7,7 +7,7 @@ import {
   doc 
 } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
-import { db, OperationType, handleFirestoreError } from '../lib/firebase';
+import { db, OperationType, handleFirestoreError, parseFirestoreErrorToUserMsg } from '../lib/firebase';
 import { Warranty } from '../types';
 import { toROCDate, getExpiryStatus } from '../utils/rocDate';
 import { formatCurrency, cn } from '../lib/utils';
@@ -66,7 +66,7 @@ export default function WarrantyList({ onEdit }: WarrantyListProps) {
       setWarranties(data);
     }, (error) => {
       console.error('Firestore Read Warranties Error:', error);
-      setErrorMsg(`讀取保固清單連線異常：${error.message || error}`);
+      setErrorMsg(`讀取保固清單連線異常：${parseFirestoreErrorToUserMsg(error)}`);
       setLoading(false);
     });
 
@@ -80,7 +80,7 @@ export default function WarrantyList({ onEdit }: WarrantyListProps) {
       setLoading(false);
     }, (error) => {
       console.error('Firestore Read Issues Error:', error);
-      setErrorMsg(`讀取維修工單連線異常：${error.message || error}`);
+      setErrorMsg(`讀取維修工單連線異常：${parseFirestoreErrorToUserMsg(error)}`);
       setLoading(false);
     });
 
