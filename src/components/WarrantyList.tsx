@@ -47,12 +47,16 @@ export default function WarrantyList({ onEdit }: WarrantyListProps) {
   const [warranties, setWarranties] = useState<Warranty[]>([]);
   const [issues, setIssues] = useState<Issue[]>([]);
   const [loading, setLoading] = useState(true);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedProjectForIssues, setSelectedProjectForIssues] = useState<{id: string, name: string, vendor: string} | null>(null);
   const [selectedProjectForNotify, setSelectedProjectForNotify] = useState<{id: string, name: string} | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; id: string | null }>({ isOpen: false, id: null });
 
   useEffect(() => {
+    setLoading(true);
+    setErrorMsg(null);
+
     const wq = query(collection(db, 'warranties'), orderBy('expiryDate', 'asc'));
     const unsubscribeW = onSnapshot(wq, (snapshot) => {
       const data = snapshot.docs.map(doc => ({
@@ -61,7 +65,9 @@ export default function WarrantyList({ onEdit }: WarrantyListProps) {
       })) as Warranty[];
       setWarranties(data);
     }, (error) => {
-      handleFirestoreError(error, OperationType.LIST, 'warranties');
+      console.error('Firestore Read Warranties Error:', error);
+      setErrorMsg(`讀取保固清單連線異常：${error.message || error}`);
+      setLoading(false);
     });
 
     const iq = query(collection(db, 'issues'));
@@ -73,7 +79,9 @@ export default function WarrantyList({ onEdit }: WarrantyListProps) {
       setIssues(data);
       setLoading(false);
     }, (error) => {
-      handleFirestoreError(error, OperationType.LIST, 'issues');
+      console.error('Firestore Read Issues Error:', error);
+      setErrorMsg(`讀取維修工單連線異常：${error.message || error}`);
+      setLoading(false);
     });
 
     return () => {
@@ -121,6 +129,16 @@ export default function WarrantyList({ onEdit }: WarrantyListProps) {
 
   return (
     <div className="space-y-6">
+      {errorMsg && (
+        <div className="bg-amber-50 border border-amber-200 text-amber-900 rounded-2xl p-4 flex items-start gap-3 shadow-sm text-sm font-semibold">
+          <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5 animate-bounce" />
+          <div className="space-y-1">
+            <p className="font-bold">連線或讀取失敗</p>
+            <p className="text-xs text-amber-700">{errorMsg}</p>
+          </div>
+        </div>
+      )}
+
       <AnimatePresence>
         {selectedProjectForIssues && (
           <ProjectIssuesModal

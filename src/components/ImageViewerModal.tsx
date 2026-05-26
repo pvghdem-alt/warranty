@@ -18,6 +18,14 @@ export default function ImageViewerModal({ url, onClose }: ImageViewerModalProps
 
   if (!url) return null;
 
+  let displayUrl = url;
+  if (url.includes('drive.google.com') && !url.includes('/api/drive/proxy')) {
+    const idMatch = url.match(/[-\w]{25,}/);
+    if (idMatch && idMatch[0]) {
+      displayUrl = `/api/drive/proxy?id=${idMatch[0]}`;
+    }
+  }
+
   return (
     <AnimatePresence>
       <motion.div
@@ -37,7 +45,8 @@ export default function ImageViewerModal({ url, onClose }: ImageViewerModalProps
           initial={{ scale: 0.95 }}
           animate={{ scale: 1 }}
           exit={{ scale: 0.95 }}
-          src={url}
+          src={displayUrl}
+          referrerPolicy="no-referrer"
           alt="Enlarged view"
           className="max-w-full max-h-full object-contain rounded-lg"
           onClick={(e) => e.stopPropagation()}

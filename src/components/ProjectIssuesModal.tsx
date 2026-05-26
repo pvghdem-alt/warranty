@@ -6,7 +6,7 @@ import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 import LineNotifyModal from './LineNotifyModal';
 import ConfirmModal from './ConfirmModal';
 import ReturnTicketModal from './ReturnTicketModal';
-import ImageUpload from './ImageUpload';
+import ImageUpload, { deletePhotoFromDrive } from './ImageUpload';
 import ImageViewerModal from './ImageViewerModal';
 
 interface Issue {
@@ -207,7 +207,25 @@ export default function ProjectIssuesModal({ warrantyId, projectName, vendorName
   const handleDelete = async (id: string | undefined) => {
     try {
       if (id) {
-        await deleteDoc(doc(db, 'issues', id));
+        // Fetch issue to get attached photo URLs
+        const issueRef = doc(db, 'issues', id);
+        const issueSnap = await getDoc(issueRef);
+        if (issueSnap.exists()) {
+          const data = issueSnap.data();
+          const photos = data?.photoUrls || [];
+          const completionPhotos = data?.completionPhotoUrls || [];
+          const allUrls = [...photos, ...completionPhotos];
+          if (allUrls.length > 0) {
+            for (const url of allUrls) {
+               try {
+                 await deletePhotoFromDrive(url);
+               } catch (drvErr) {
+                 console.error("Failed to delete issue photo from Drive on issue deletion:", drvErr);
+               }
+            }
+          }
+        }
+        await deleteDoc(issueRef);
       }
       setDeleteConfirm({ isOpen: false, id: null });
     } catch (error) {
@@ -396,12 +414,24 @@ export default function ProjectIssuesModal({ warrantyId, projectName, vendorName
 
                 <div className="mt-4 col-span-1 md:col-span-2 space-y-1">
                   <label className="text-xs font-bold text-slate-500">相關照片上傳</label>
-                  <ImageUpload photoUrls={photoUrls} onChange={setPhotoUrls} />
+                  <ImageUpload 
+                    photoUrls={photoUrls} 
+                    onChange={setPhotoUrls} 
+                    projectName={projectName}
+                    vendorCompany={vendorCompany}
+                    issueName={issueName}
+                  />
                 </div>
                 
                 <div className="mt-4 col-span-1 md:col-span-2 space-y-1">
                   <label className="text-xs font-bold text-slate-500">完工照片上傳</label>
-                  <ImageUpload photoUrls={completionPhotoUrls} onChange={setCompletionPhotoUrls} />
+                  <ImageUpload 
+                    photoUrls={completionPhotoUrls} 
+                    onChange={setCompletionPhotoUrls} 
+                    projectName={projectName}
+                    vendorCompany={vendorCompany}
+                    issueName={issueName}
+                  />
                 </div>
 
                 <div className="flex gap-2 mt-6 justify-end">

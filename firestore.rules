@@ -75,5 +75,9 @@ service cloud.firestore {
       allow read: if true;
       allow write: if true;
     }
+
+    match /uploaded_images/{imageId} {
+      allow read, write: if true;
+    }
   }
 }

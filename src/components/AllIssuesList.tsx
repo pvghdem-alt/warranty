@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { collection, onSnapshot, query, orderBy, getDocs, doc, updateDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy, getDocs, doc, updateDoc, deleteDoc, serverTimestamp, getDoc } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 import { Edit3, Trash2, Search, MessageCircle, AlertCircle, Clock, Construction, Wrench, BarChart2, ListTodo, ExternalLink, Building2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -8,7 +8,7 @@ import ProjectIssuesModal from './ProjectIssuesModal'; // We can reuse the edit 
 import LineNotifyModal from './LineNotifyModal';
 import ConfirmModal from './ConfirmModal';
 import ReturnTicketModal from './ReturnTicketModal';
-import ImageUpload from './ImageUpload';
+import ImageUpload, { deletePhotoFromDrive } from './ImageUpload';
 import ImageViewerModal from './ImageViewerModal';
 
 interface Issue {
@@ -39,6 +39,7 @@ export default function AllIssuesList() {
   const [viewMode, setViewMode] = useState<'list' | 'stats'>('list');
   const [issues, setIssues] = useState<Issue[]>([]);
   const [loading, setLoading] = useState(true);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'all'|'未讀回覆'|'未處理'|'維修中'|'待料中'|'已完成'|'待確認'>('未讀回覆');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedProjectId, setSelectedProjectId] = useState<string>('all');
@@ -54,6 +55,9 @@ export default function AllIssuesList() {
   const [viewImageUrl, setViewImageUrl] = useState<string | null>(null);
 
   useEffect(() => {
+    setLoading(true);
+    setErrorMsg(null);
+
     // Fetch warranties to map IDs to project names
     getDocs(collection(db, 'warranties')).then(snap => {
       const pMap: Record<string, string> = {};
@@ -62,7 +66,7 @@ export default function AllIssuesList() {
       });
       setProjectsMap(pMap);
     }).catch(e => {
-      console.error(e);
+      console.error('AllIssuesList Warranties fetch error:', e);
     });
 
     const q = query(collection(db, 'issues'));
@@ -85,7 +89,8 @@ export default function AllIssuesList() {
       setIssues(data);
       setLoading(false);
     }, (error) => {
-      handleFirestoreError(error, OperationType.LIST, 'issues');
+      console.error('AllIssuesList issues snapshot error:', error);
+      setErrorMsg(`讀取維修工單連線異常：${error.message || error}`);
       setLoading(false);
     });
 
@@ -95,7 +100,25 @@ export default function AllIssuesList() {
   const handleDelete = async (id: string) => {
     try {
       if (id) {
-        await deleteDoc(doc(db, 'issues', id));
+        // Fetch issue to get attached photo URLs
+        const issueRef = doc(db, 'issues', id);
+        const issueSnap = await getDoc(issueRef);
+        if (issueSnap.exists()) {
+          const data = issueSnap.data();
+          const photos = data?.photoUrls || [];
+          const completionPhotos = data?.completionPhotoUrls || [];
+          const allUrls = [...photos, ...completionPhotos];
+          if (allUrls.length > 0) {
+            for (const url of allUrls) {
+              try {
+                await deletePhotoFromDrive(url);
+              } catch (drvErr) {
+                console.error("Failed to delete issue photo from Drive on issue deletion:", drvErr);
+              }
+            }
+          }
+        }
+        await deleteDoc(issueRef);
       }
       setDeleteConfirm({ isOpen: false, id: null });
     } catch (error) {
@@ -237,6 +260,16 @@ export default function AllIssuesList() {
 
   return (
     <div className="space-y-6">
+      {errorMsg && (
+        <div className="bg-amber-50 border border-amber-200 text-amber-900 rounded-2xl p-4 flex items-start gap-3 shadow-sm text-sm font-semibold">
+          <AlertCircle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5 animate-bounce" />
+          <div className="space-y-1">
+            <p className="font-bold">連線或讀取失敗</p>
+            <p className="text-xs text-amber-700">{errorMsg}</p>
+          </div>
+        </div>
+      )}
+
       <div className="flex bg-slate-200/50 p-1 rounded-xl max-w-sm">
         <button
           onClick={() => setViewMode('list')}
@@ -567,11 +600,23 @@ export default function AllIssuesList() {
                     </div>
                     <div className="space-y-1 md:col-span-2">
                       <label className="text-xs font-bold text-slate-500">相關照片上傳</label>
-                      <ImageUpload photoUrls={editFormData.photoUrls} onChange={urls => setEditFormData({...editFormData, photoUrls: urls})} />
+                      <ImageUpload 
+                        photoUrls={editFormData.photoUrls} 
+                        onChange={urls => setEditFormData({...editFormData, photoUrls: urls})} 
+                        projectName={projectsMap[editFormData.warrantyId]}
+                        vendorCompany={editFormData.vendorCompany}
+                        issueName={editFormData.issueName}
+                      />
                     </div>
                     <div className="space-y-1 md:col-span-2">
                       <label className="text-xs font-bold text-slate-500">完工照片上傳</label>
-                      <ImageUpload photoUrls={editFormData.completionPhotoUrls} onChange={urls => setEditFormData({...editFormData, completionPhotoUrls: urls})} />
+                      <ImageUpload 
+                        photoUrls={editFormData.completionPhotoUrls} 
+                        onChange={urls => setEditFormData({...editFormData, completionPhotoUrls: urls})} 
+                        projectName={projectsMap[editFormData.warrantyId]}
+                        vendorCompany={editFormData.vendorCompany}
+                        issueName={editFormData.issueName}
+                      />
                     </div>
                   </div>
                   <div className="flex justify-end gap-2 pt-2">

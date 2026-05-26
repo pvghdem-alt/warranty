@@ -487,11 +487,23 @@ export default function VendorDashboard({ vendorName, initialProjectId }: Vendor
 
                         <div className="space-y-2 md:col-span-2">
                           <label className="text-sm font-bold text-slate-700">相關照片上傳</label>
-                          <ImageUpload photoUrls={photoUrls} onChange={setPhotoUrls} />
+                          <ImageUpload 
+                            photoUrls={photoUrls} 
+                            onChange={setPhotoUrls} 
+                            projectName={projectsMap[issue.warrantyId]}
+                            vendorCompany={issue.vendorCompany}
+                            issueName={issue.issueName}
+                          />
                         </div>
                         <div className="space-y-2 md:col-span-2">
                           <label className="text-sm font-bold text-slate-700">完工照片上傳</label>
-                          <ImageUpload photoUrls={completionPhotoUrls} onChange={setCompletionPhotoUrls} />
+                          <ImageUpload 
+                            photoUrls={completionPhotoUrls} 
+                            onChange={setCompletionPhotoUrls} 
+                            projectName={projectsMap[issue.warrantyId]}
+                            vendorCompany={issue.vendorCompany}
+                            issueName={issue.issueName}
+                          />
                         </div>
                       </div>
                       <div className="flex gap-3 justify-end bg-slate-50 -mx-5 -mb-5 p-4 mt-6 border-t border-slate-100">
