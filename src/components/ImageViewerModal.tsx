@@ -19,10 +19,15 @@ export default function ImageViewerModal({ url, onClose }: ImageViewerModalProps
   if (!url) return null;
 
   let displayUrl = url;
-  if (url.includes('drive.google.com') && !url.includes('/api/drive/proxy')) {
+  if (url.includes('drive.google.com') && !url.includes('uc?export=view')) {
     const idMatch = url.match(/[-\w]{25,}/);
     if (idMatch && idMatch[0]) {
-      displayUrl = `/api/drive/proxy?id=${idMatch[0]}`;
+      displayUrl = `https://drive.google.com/uc?export=view&id=${idMatch[0]}`;
+    }
+  } else if (url.includes('/api/drive/proxy')) {
+    const idMatch = url.match(/id=([-\w]{25,})/);
+    if (idMatch && idMatch[1]) {
+      displayUrl = `https://drive.google.com/uc?export=view&id=${idMatch[1]}`;
     }
   }
 

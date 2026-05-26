@@ -82,10 +82,15 @@ export default function ImageUpload({
         // Native Canvas compression (fast & reliable, avoids web worker hangs)
         const base64DataUrl = await compressImage(file);
         
-        // Upload to our backend proxy which sends to Google Apps Script
-        const response = await fetch('/api/drive/upload', {
+        // --- 修正：支援 Github Pages (純前端) ---
+        // Github Pages 只能運行前端，沒有後端的 /api 路由。
+        // 改為前端「直接發送」給 Google Apps Script 網址，並使用 text/plain 來避開跨域預檢 (CORS preflight)。
+        const scriptUrl = import.meta.env.VITE_GOOGLE_SCRIPT_WEBHOOK_URL || 'https://script.google.com/macros/s/AKfycby7A7v4fv7SECH6mRWdmpS4ThyJ6bocM2jfY1N78aQdKJNaWHr_c15rNElIRXnkQNjl/exec';
+        
+        const response = await fetch(scriptUrl, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          // 使用 text/plain 可以避免觸發 OPTIONS preflight 請求，解決 CORS 問題
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify({
             base64: base64DataUrl,
             fileName: file.name,
@@ -96,23 +101,28 @@ export default function ImageUpload({
           })
         });
 
-        const result = await response.json();
+        const resultText = await response.text();
+        let result;
+        try {
+          result = JSON.parse(resultText);
+        } catch (e) {
+          throw new Error('Google Apps Script 回傳不正確。可能發生錯誤或需要重新授權執行身分為「我(Me)」。');
+        }
         
-        if (!response.ok) {
+        if (!result.success || !result.url) {
           throw new Error(result.error || 'Upload failed');
         }
         
         if (result.url) {
-          let proxyUrl = result.url;
-          // Check if it's a Google Drive URL
-          if (proxyUrl.includes('drive.google.com')) {
-            // Try to extract the file ID
-            const idMatch = proxyUrl.match(/[-\w]{25,}/);
+          let directUrl = result.url;
+          // 將 Google Drive 分享連結轉換為圖片直連連結 (直接顯示用)
+          if (directUrl.includes('drive.google.com')) {
+            const idMatch = directUrl.match(/[-\w]{25,}/);
             if (idMatch && idMatch[0]) {
-              proxyUrl = `${window.location.origin}/api/drive/proxy?id=${idMatch[0]}`;
+              directUrl = `https://drive.google.com/uc?export=view&id=${idMatch[0]}`;
             }
           }
-          newUrls.push(proxyUrl);
+          newUrls.push(directUrl);
         }
       }
       onChange(newUrls);
@@ -163,13 +173,20 @@ export default function ImageUpload({
       {photoUrls.length > 0 && (
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
           {photoUrls.map((url, i) => {
+            // Ensure old photo URLs get corrected to direct uc view if needed
             let displayUrl = url;
-            if (url.includes('drive.google.com') && !url.includes('/api/drive/proxy')) {
+            if (url.includes('drive.google.com') && !url.includes('uc?export=view')) {
                const idMatch = url.match(/[-\w]{25,}/);
                if (idMatch && idMatch[0]) {
-                 displayUrl = `/api/drive/proxy?id=${idMatch[0]}`;
+                 displayUrl = `https://drive.google.com/uc?export=view&id=${idMatch[0]}`;
+               }
+            } else if (url.includes('/api/drive/proxy')) {
+               const idMatch = url.match(/id=([-\w]{25,})/);
+               if (idMatch && idMatch[1]) {
+                 displayUrl = `https://drive.google.com/uc?export=view&id=${idMatch[1]}`;
                }
             }
+
             return (
               <div key={i} className="relative group aspect-square bg-white rounded-xl overflow-hidden border border-slate-200 shadow-sm">
                 <img src={displayUrl} alt={`Photo ${i+1}`} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
