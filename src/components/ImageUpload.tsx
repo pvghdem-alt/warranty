@@ -118,36 +118,41 @@ export default function ImageUpload({
         } catch (backendError: any) {
           console.warn("Backend proxy upload failed/unconfigured, attempting frontend direct upload:", backendError);
           
-          // 如果後端 Proxy 失敗 (例如：純前端佈署、或環境變數不對)，再嘗試前端直接傳送 (CORS / Webhook URL fallback)
-          const scriptUrl = import.meta.env.VITE_GOOGLE_SCRIPT_WEBHOOK_URL || 'https://script.google.com/macros/s/AKfycby7A7v4fv7SECH6mRWdmpS4ThyJ6bocM2jfY1N78aQdKJNaWHr_c15rNElIRXnkQNjl/exec';
-          
-          const response = await fetch(scriptUrl, {
-            method: 'POST',
-            // 必須只用 text/plain (不可加上 charset=utf-8) 否則會觸發 OPTIONS 預檢導致 CORS 失敗
-            headers: { 'Content-Type': 'text/plain' },
-            body: JSON.stringify({
-              base64: base64DataUrl,
-              fileName: file.name,
-              mimeType: 'image/jpeg',
-              projectName: projectName || '未分類專案',
-              vendorCompany: vendorCompany || '未指定廠商',
-              issueName: issueName || '未命名工單'
-            })
-          });
-
-          const resultText = await response.text();
-          let result;
           try {
-            result = JSON.parse(resultText);
-          } catch (e) {
-            throw new Error('Google Apps Script Webhook 回傳格式異常 (可能是尚未完成部署或需要重新授權執行身分為「我(Me)」)');
-          }
-          
-          if (result.success && result.url) {
-            resultUrl = result.url;
-            uploadSuccess = true;
-          } else {
-            throw new Error(result.error || backendError.message || '上傳失敗');
+            // 如果後端 Proxy 失敗 (例如：純前端佈署、或環境變數不對)，再嘗試前端直接傳送 (CORS / Webhook URL fallback)
+            const scriptUrl = import.meta.env.VITE_GOOGLE_SCRIPT_WEBHOOK_URL || 'https://script.google.com/macros/s/AKfycby7A7v4fv7SECH6mRWdmpS4ThyJ6bocM2jfY1N78aQdKJNaWHr_c15rNElIRXnkQNjl/exec';
+            
+            const response = await fetch(scriptUrl, {
+              method: 'POST',
+              // 必須只用 text/plain (不可加上 charset=utf-8) 否則會觸發 OPTIONS 預檢導致 CORS 失敗
+              headers: { 'Content-Type': 'text/plain' },
+              body: JSON.stringify({
+                base64: base64DataUrl,
+                fileName: file.name,
+                mimeType: 'image/jpeg',
+                projectName: projectName || '未分類專案',
+                vendorCompany: vendorCompany || '未指定廠商',
+                issueName: issueName || '未命名工單'
+              })
+            });
+
+            const resultText = await response.text();
+            let result;
+            try {
+              result = JSON.parse(resultText);
+            } catch (e) {
+              throw new Error('Google Apps Script Webhook 回傳格式異常 (請確認部署狀態為「我(Me)」且「所有人」)');
+            }
+            
+            if (result.success && result.url) {
+              resultUrl = result.url;
+              uploadSuccess = true;
+            } else {
+              throw new Error(result.error || backendError.message || '上傳失敗');
+            }
+          } catch (fallbackError: any) {
+            console.error("Fallback upload also failed:", fallbackError);
+            throw new Error(`上傳失敗！如果您已部署至外部伺服器 (如 Render/GitHub)，請務必於環境變數中設定正確的 GOOGLE_SCRIPT_WEBHOOK_URL。(後端錯誤：${backendError.message})`);
           }
         }
 
