@@ -59,7 +59,7 @@ export default function DataMigrationTool() {
               let resultUrl = '';
               let uploadSuccess = false;
 
-              // 優先使用後端 Proxy API 的上傳端點，避免前端直接連線 Apps Script 產生的 CORS 或授權問題
+              // 優先使用後端 Proxy API 的上傳端點，不受瀏覽器 CORS 限制
               try {
                 const response = await fetch('/api/drive/upload', {
                   method: 'POST',
@@ -70,7 +70,8 @@ export default function DataMigrationTool() {
                     mimeType: 'image/jpeg',
                     projectName: '歷史工單遷移',
                     vendorCompany: '複查與歷史資料',
-                    issueName: `工單圖片遷移 (專案 ID ${issue.id})`
+                    issueName: `工單圖片遷移 (專案 ID ${issue.id})`,
+                    scriptUrl: scriptUrl
                   })
                 });
 
@@ -91,7 +92,7 @@ export default function DataMigrationTool() {
                 
                 const response = await fetch(scriptUrl, {
                   method: 'POST',
-                  headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                  headers: { 'Content-Type': 'text/plain' },
                   body: JSON.stringify({
                     base64: url,
                     fileName: `migration_${issue.id}_${i}.png`,

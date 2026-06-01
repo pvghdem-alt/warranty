@@ -85,8 +85,10 @@ export default function ImageUpload({
         let resultUrl = '';
         let uploadSuccess = false;
         
-        // 優先使用後端 Proxy API，因為後端可以讀取系統設定的安全 Secret (GOOGLE_SCRIPT_WEBHOOK_URL)
+        // 優先使用後端 Proxy API，因為後端 Proxy 不受瀏覽器 CORS 限制影響
         try {
+          const scriptUrlOption = import.meta.env.VITE_GOOGLE_SCRIPT_WEBHOOK_URL || 'https://script.google.com/macros/s/AKfycby7A7v4fv7SECH6mRWdmpS4ThyJ6bocM2jfY1N78aQdKJNaWHr_c15rNElIRXnkQNjl/exec';
+
           const response = await fetch('/api/drive/upload', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -96,7 +98,8 @@ export default function ImageUpload({
               mimeType: 'image/jpeg',
               projectName: projectName || '未分類專案',
               vendorCompany: vendorCompany || '未指定廠商',
-              issueName: issueName || '未命名工單'
+              issueName: issueName || '未命名工單',
+              scriptUrl: scriptUrlOption
             })
           });
 
@@ -120,7 +123,8 @@ export default function ImageUpload({
           
           const response = await fetch(scriptUrl, {
             method: 'POST',
-            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            // 必須只用 text/plain (不可加上 charset=utf-8) 否則會觸發 OPTIONS 預檢導致 CORS 失敗
+            headers: { 'Content-Type': 'text/plain' },
             body: JSON.stringify({
               base64: base64DataUrl,
               fileName: file.name,

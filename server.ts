@@ -54,8 +54,8 @@ async function startServer() {
   // Google Apps Script Proxy for Google Drive Anonymous Uploads
   app.post('/api/drive/upload', async (req, res) => {
     try {
-      const { base64, mimeType, fileName, projectName, vendorCompany, issueName } = req.body;
-      const scriptUrl = process.env.GOOGLE_SCRIPT_WEBHOOK_URL;
+      const { base64, mimeType, fileName, projectName, vendorCompany, issueName, scriptUrl: bodyScriptUrl } = req.body;
+      const scriptUrl = process.env.GOOGLE_SCRIPT_WEBHOOK_URL || bodyScriptUrl || 'https://script.google.com/macros/s/AKfycby7A7v4fv7SECH6mRWdmpS4ThyJ6bocM2jfY1N78aQdKJNaWHr_c15rNElIRXnkQNjl/exec';
       
       if (!scriptUrl) {
         return res.status(400).json({ error: 'Google Script Webhook URL is not configured' });
