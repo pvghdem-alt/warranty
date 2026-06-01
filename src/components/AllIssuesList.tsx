@@ -3,7 +3,7 @@ import { collection, onSnapshot, query, orderBy, getDocs, doc, updateDoc, delete
 import { db, handleFirestoreError, OperationType, parseFirestoreErrorToUserMsg } from '../lib/firebase';
 import { Edit3, Trash2, Search, MessageCircle, AlertCircle, Clock, Construction, Wrench, BarChart2, ListTodo, ExternalLink, Building2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { cn } from '../lib/utils';
+import { cn, getDisplayUrl } from '../lib/utils';
 import ProjectIssuesModal from './ProjectIssuesModal'; // We can reuse the edit form logic, or just make an inline edit here.
 import LineNotifyModal from './LineNotifyModal';
 import ConfirmModal from './ConfirmModal';
@@ -659,7 +659,7 @@ export default function AllIssuesList() {
                       <div className="flex flex-wrap gap-2">
                         {issue.photoUrls.map((url, idx) => (
                           <button key={`photo-${idx}`} type="button" onClick={() => setViewImageUrl(url)} className="block w-16 h-16 rounded-lg overflow-hidden border border-slate-200 hover:opacity-80 transition-opacity bg-black">
-                            <img src={url} alt="Issue" className="w-full h-full object-contain" />
+                            <img src={getDisplayUrl(url)} alt="Issue" className="w-full h-full object-contain" />
                           </button>
                         ))}
                       </div>
@@ -671,7 +671,7 @@ export default function AllIssuesList() {
                       <div className="flex flex-wrap gap-2">
                         {(issue as any).completionPhotoUrls.map((url: string, idx: number) => (
                           <button key={`comp-${idx}`} type="button" onClick={() => setViewImageUrl(url)} className="block w-16 h-16 rounded-lg overflow-hidden border border-emerald-200 hover:opacity-80 transition-opacity bg-black">
-                            <img src={url} alt="Completion" className="w-full h-full object-contain" />
+                            <img src={getDisplayUrl(url)} alt="Completion" className="w-full h-full object-contain" />
                           </button>
                         ))}
                       </div>

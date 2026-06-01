@@ -2,6 +2,8 @@ import React, { useEffect } from 'react';
 import { X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
+import { getDisplayUrl } from '../lib/utils';
+
 interface ImageViewerModalProps {
   url: string | null;
   onClose: () => void;
@@ -18,18 +20,7 @@ export default function ImageViewerModal({ url, onClose }: ImageViewerModalProps
 
   if (!url) return null;
 
-  let displayUrl = url;
-  if (url.includes('drive.google.com') && !url.includes('uc?export=view')) {
-    const idMatch = url.match(/[-\w]{25,}/);
-    if (idMatch && idMatch[0]) {
-      displayUrl = `https://drive.google.com/uc?export=view&id=${idMatch[0]}`;
-    }
-  } else if (url.includes('/api/drive/proxy')) {
-    const idMatch = url.match(/id=([-\w]{25,})/);
-    if (idMatch && idMatch[1]) {
-      displayUrl = `https://drive.google.com/uc?export=view&id=${idMatch[1]}`;
-    }
-  }
+  const displayUrl = getDisplayUrl(url);
 
   return (
     <AnimatePresence>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Plus, Edit3, Trash2, MessageCircle, AlertCircle, CheckCircle, Clock, Construction, Users } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { getDisplayUrl } from '../lib/utils';
 import { collection, addDoc, onSnapshot, query, orderBy, deleteDoc, doc, updateDoc, serverTimestamp, where, getDocs, getDoc } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType, parseFirestoreErrorToUserMsg } from '../lib/firebase';
 import LineNotifyModal from './LineNotifyModal';
@@ -522,7 +523,7 @@ export default function ProjectIssuesModal({ warrantyId, projectName, vendorName
                         <div className="flex flex-wrap gap-2 mt-3">
                           {issue.photoUrls.map((url, idx) => (
                             <button key={`photo-${idx}`} type="button" onClick={() => setViewImageUrl(url)} className="block w-16 h-16 rounded-lg overflow-hidden border border-slate-200 hover:opacity-80 transition-opacity bg-black">
-                              <img src={url} alt="Issue" className="w-full h-full object-contain" />
+                              <img src={getDisplayUrl(url)} alt="Issue" className="w-full h-full object-contain" />
                             </button>
                           ))}
                         </div>
@@ -532,7 +533,7 @@ export default function ProjectIssuesModal({ warrantyId, projectName, vendorName
                           <p className="text-[10px] w-full font-bold text-emerald-600 mb-1">完工照片：</p>
                           {(issue as any).completionPhotoUrls.map((url: string, idx: number) => (
                             <button key={`comp-${idx}`} type="button" onClick={() => setViewImageUrl(url)} className="block w-16 h-16 rounded-lg overflow-hidden border border-emerald-200 hover:opacity-80 transition-opacity bg-black">
-                              <img src={url} alt="Completion" className="w-full h-full object-contain" />
+                              <img src={getDisplayUrl(url)} alt="Completion" className="w-full h-full object-contain" />
                             </button>
                           ))}
                         </div>

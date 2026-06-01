@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { UploadCloud, X, Loader2, HardDrive, CheckCircle2, ShieldAlert } from 'lucide-react';
-import { cn } from '../lib/utils';
+import { cn, getDisplayUrl } from '../lib/utils';
 
 interface ImageUploadProps {
   photoUrls: string[];
@@ -82,39 +82,73 @@ export default function ImageUpload({
         // Native Canvas compression (fast & reliable, avoids web worker hangs)
         const base64DataUrl = await compressImage(file);
         
-        // --- 修正：支援 Github Pages (純前端) ---
-        // Github Pages 只能運行前端，沒有後端的 /api 路由。
-        // 改為前端「直接發送」給 Google Apps Script 網址，並使用 text/plain 來避開跨域預檢 (CORS preflight)。
-        const scriptUrl = import.meta.env.VITE_GOOGLE_SCRIPT_WEBHOOK_URL || 'https://script.google.com/macros/s/AKfycby7A7v4fv7SECH6mRWdmpS4ThyJ6bocM2jfY1N78aQdKJNaWHr_c15rNElIRXnkQNjl/exec';
+        let resultUrl = '';
+        let uploadSuccess = false;
         
-        const response = await fetch(scriptUrl, {
-          method: 'POST',
-          // 使用 text/plain 可以避免觸發 OPTIONS preflight 請求，解決 CORS 問題
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({
-            base64: base64DataUrl,
-            fileName: file.name,
-            mimeType: 'image/jpeg',
-            projectName: projectName || '未分類專案',
-            vendorCompany: vendorCompany || '未指定廠商',
-            issueName: issueName || '未命名工單'
-          })
-        });
-
-        const resultText = await response.text();
-        let result;
+        // 優先使用後端 Proxy API，因為後端可以讀取系統設定的安全 Secret (GOOGLE_SCRIPT_WEBHOOK_URL)
         try {
-          result = JSON.parse(resultText);
-        } catch (e) {
-          throw new Error('Google Apps Script 回傳不正確。可能發生錯誤或需要重新授權執行身分為「我(Me)」。');
+          const response = await fetch('/api/drive/upload', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              base64: base64DataUrl,
+              fileName: file.name,
+              mimeType: 'image/jpeg',
+              projectName: projectName || '未分類專案',
+              vendorCompany: vendorCompany || '未指定廠商',
+              issueName: issueName || '未命名工單'
+            })
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            if (data && data.url) {
+              resultUrl = data.url;
+              uploadSuccess = true;
+            } else if (data && data.error) {
+              throw new Error(data.error);
+            }
+          } else {
+            const errData = await response.json().catch(() => ({}));
+            throw new Error(errData.error || `Server responded with status ${response.status}`);
+          }
+        } catch (backendError: any) {
+          console.warn("Backend proxy upload failed/unconfigured, attempting frontend direct upload:", backendError);
+          
+          // 如果後端 Proxy 失敗 (例如：純前端佈署、或環境變數不對)，再嘗試前端直接傳送 (CORS / Webhook URL fallback)
+          const scriptUrl = import.meta.env.VITE_GOOGLE_SCRIPT_WEBHOOK_URL || 'https://script.google.com/macros/s/AKfycby7A7v4fv7SECH6mRWdmpS4ThyJ6bocM2jfY1N78aQdKJNaWHr_c15rNElIRXnkQNjl/exec';
+          
+          const response = await fetch(scriptUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({
+              base64: base64DataUrl,
+              fileName: file.name,
+              mimeType: 'image/jpeg',
+              projectName: projectName || '未分類專案',
+              vendorCompany: vendorCompany || '未指定廠商',
+              issueName: issueName || '未命名工單'
+            })
+          });
+
+          const resultText = await response.text();
+          let result;
+          try {
+            result = JSON.parse(resultText);
+          } catch (e) {
+            throw new Error('Google Apps Script Webhook 回傳格式異常 (可能是尚未完成部署或需要重新授權執行身分為「我(Me)」)');
+          }
+          
+          if (result.success && result.url) {
+            resultUrl = result.url;
+            uploadSuccess = true;
+          } else {
+            throw new Error(result.error || backendError.message || '上傳失敗');
+          }
         }
-        
-        if (!result.success || !result.url) {
-          throw new Error(result.error || 'Upload failed');
-        }
-        
-        if (result.url) {
-          let directUrl = result.url;
+
+        if (uploadSuccess && resultUrl) {
+          let directUrl = resultUrl;
           // 將 Google Drive 分享連結轉換為圖片直連連結 (直接顯示用)
           if (directUrl.includes('drive.google.com')) {
             const idMatch = directUrl.match(/[-\w]{25,}/);
@@ -123,6 +157,8 @@ export default function ImageUpload({
             }
           }
           newUrls.push(directUrl);
+        } else {
+          throw new Error('上傳失敗：無法取得雲端圖片連結');
         }
       }
       onChange(newUrls);
@@ -173,19 +209,7 @@ export default function ImageUpload({
       {photoUrls.length > 0 && (
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
           {photoUrls.map((url, i) => {
-            // Ensure old photo URLs get corrected to direct uc view if needed
-            let displayUrl = url;
-            if (url.includes('drive.google.com') && !url.includes('uc?export=view')) {
-               const idMatch = url.match(/[-\w]{25,}/);
-               if (idMatch && idMatch[0]) {
-                 displayUrl = `https://drive.google.com/uc?export=view&id=${idMatch[0]}`;
-               }
-            } else if (url.includes('/api/drive/proxy')) {
-               const idMatch = url.match(/id=([-\w]{25,})/);
-               if (idMatch && idMatch[1]) {
-                 displayUrl = `https://drive.google.com/uc?export=view&id=${idMatch[1]}`;
-               }
-            }
+            const displayUrl = getDisplayUrl(url);
 
             return (
               <div key={i} className="relative group aspect-square bg-white rounded-xl overflow-hidden border border-slate-200 shadow-sm">

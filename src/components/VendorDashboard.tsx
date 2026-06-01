@@ -3,7 +3,7 @@ import { collection, query, where, onSnapshot, getDocs, doc, updateDoc, serverTi
 import { db, handleFirestoreError, OperationType, parseFirestoreErrorToUserMsg } from '../lib/firebase';
 import { ShieldCheck, CheckCircle2, AlertCircle, Clock, Construction } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { cn } from '../lib/utils';
+import { cn, getDisplayUrl } from '../lib/utils';
 import ImageUpload from './ImageUpload';
 import ImageViewerModal from './ImageViewerModal';
 
@@ -393,7 +393,7 @@ export default function VendorDashboard({ vendorName, initialProjectId }: Vendor
                               <div className="flex flex-wrap gap-2">
                                 {issue.photoUrls.map((url, idx) => (
                                   <button key={`photo-${idx}`} type="button" onClick={() => setViewImageUrl(url)} className="block w-20 h-20 rounded-lg overflow-hidden border border-slate-200 hover:opacity-80 transition-opacity flex-shrink-0 bg-black">
-                                    <img src={url} alt="Issue" className="w-full h-full object-contain" />
+                                    <img src={getDisplayUrl(url)} alt="Issue" className="w-full h-full object-contain" />
                                   </button>
                                 ))}
                               </div>
@@ -406,7 +406,7 @@ export default function VendorDashboard({ vendorName, initialProjectId }: Vendor
                               <div className="flex flex-wrap gap-2">
                                 {(issue as any).completionPhotoUrls.map((url: string, idx: number) => (
                                   <button key={`comp-${idx}`} type="button" onClick={() => setViewImageUrl(url)} className="block w-20 h-20 rounded-lg overflow-hidden border border-emerald-200 hover:opacity-80 transition-opacity flex-shrink-0 bg-black">
-                                    <img src={url} alt="Completion" className="w-full h-full object-contain" />
+                                    <img src={getDisplayUrl(url)} alt="Completion" className="w-full h-full object-contain" />
                                   </button>
                                 ))}
                               </div>

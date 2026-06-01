@@ -56,23 +56,63 @@ export default function DataMigrationTool() {
           if (url.startsWith('data:image')) {
             addLog(`正在上傳工單 ${issue.id} 的第 ${i+1} 張圖片...`);
             
-            try {
-              const response = await fetch(scriptUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                body: JSON.stringify({
-                  base64: url,
-                  fileName: `migration_${issue.id}_${i}.png`,
-                  mimeType: 'image/jpeg' 
-                })
-              });
+              let resultUrl = '';
+              let uploadSuccess = false;
 
-              const resultText = await response.text();
-              const result = JSON.parse(resultText);
+              // 優先使用後端 Proxy API 的上傳端點，避免前端直接連線 Apps Script 產生的 CORS 或授權問題
+              try {
+                const response = await fetch('/api/drive/upload', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    base64: url,
+                    fileName: `migration_${issue.id}_${i}.png`,
+                    mimeType: 'image/jpeg',
+                    projectName: '歷史工單遷移',
+                    vendorCompany: '複查與歷史資料',
+                    issueName: `工單圖片遷移 (專案 ID ${issue.id})`
+                  })
+                });
 
-              if (result.success && result.url) {
+                if (response.ok) {
+                  const data = await response.json();
+                  if (data && data.url) {
+                    resultUrl = data.url;
+                    uploadSuccess = true;
+                  } else if (data && data.error) {
+                    throw new Error(data.error);
+                  }
+                } else {
+                  const errData = await response.json().catch(() => ({}));
+                  throw new Error(errData.error || `Server responded with status ${response.status}`);
+                }
+              } catch (backendError: any) {
+                console.warn("Migration backend proxy failed/unconfigured, attempting frontend direct upload:", backendError);
+                
+                const response = await fetch(scriptUrl, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                  body: JSON.stringify({
+                    base64: url,
+                    fileName: `migration_${issue.id}_${i}.png`,
+                    mimeType: 'image/jpeg' 
+                  })
+                });
+
+                const resultText = await response.text();
+                const result = JSON.parse(resultText);
+
+                if (result.success && result.url) {
+                  resultUrl = result.url;
+                  uploadSuccess = true;
+                } else {
+                  throw new Error(result.error || backendError.message || '上傳失敗');
+                }
+              }
+
+              if (uploadSuccess && resultUrl) {
                 // 將 Google Drive 分享連結轉換為圖片直連連結 (直接顯示用)
-                let directUrl = result.url;
+                let directUrl = resultUrl;
                 if (directUrl.includes('drive.google.com')) {
                   const idMatch = directUrl.match(/[-\w]{25,}/);
                   if (idMatch && idMatch[0]) {
@@ -83,13 +123,9 @@ export default function DataMigrationTool() {
                 hasChanges = true;
                 addLog(`✓ 成功上傳：轉換為 ${directUrl.substring(0, 30)}...`);
               } else {
-                addLog(`× 上傳失敗，保留原始 Base64: ${result.error}`);
+                addLog(`× 上傳失敗，保留原始 Base64`);
                 newUrls.push(url); // keep original if failed
               }
-            } catch (err: any) {
-               addLog(`× API 請求失敗，保留原始 Base64。錯誤: ${err.message}`);
-               newUrls.push(url);
-            }
 
           } else {
             // Already a proper URL
