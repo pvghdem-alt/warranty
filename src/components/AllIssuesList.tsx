@@ -10,6 +10,8 @@ import ConfirmModal from './ConfirmModal';
 import ReturnTicketModal from './ReturnTicketModal';
 import ImageUpload, { deletePhotoFromDrive } from './ImageUpload';
 import ImageViewerModal from './ImageViewerModal';
+import { downloadATX } from '../lib/atxGenerator';
+import { FileText } from 'lucide-react';
 
 interface Issue {
   id: string;
@@ -166,6 +168,40 @@ export default function AllIssuesList() {
     } catch (error) {
       console.error(error);
     }
+  };
+
+  const handleDownloadATX = async (issue: Issue) => {
+    let vendorInfo = { company: issue.vendorCompany, address: '', zipCode: '' };
+    try {
+      const vDoc = await getDoc(doc(db, 'vendorSettings', issue.vendorCompany));
+      const vData = vDoc.data();
+      if (vData) {
+        vendorInfo.address = vData.address || '';
+        vendorInfo.zipCode = vData.zipCode || '';
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    
+    let notifyDate = '未知';
+    let waitDays: number | string = '未知';
+    if (issue.createdAt) {
+      const date = issue.createdAt.toDate ? issue.createdAt.toDate() : new Date();
+      const rocYear = date.getFullYear() - 1911;
+      notifyDate = `${rocYear}年${date.getMonth() + 1}月${date.getDate()}日`;
+      waitDays = Math.floor((Date.now() - date.getTime()) / (1000 * 60 * 60 * 24));
+    }
+
+    downloadATX({
+      projectName: projectsMap[issue.warrantyId] || '未知案件',
+      vendors: [vendorInfo],
+      issues: [{
+        vendorCompany: issue.vendorCompany,
+        name: issue.issueName,
+        notifyDate,
+        waitDays
+      }]
+    });
   };
 
   const handleEdit = (issue: Issue) => {
@@ -543,6 +579,13 @@ export default function AllIssuesList() {
                     title="編輯回覆"
                   >
                     <Edit3 className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => handleDownloadATX(issue)}
+                    className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors border border-transparent hover:border-indigo-100"
+                    title="下載催告函 (ATX)"
+                  >
+                    <FileText className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => setDeleteConfirm({ isOpen: true, id: issue.id })}

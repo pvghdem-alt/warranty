@@ -1,0 +1,239 @@
+{
+  "folder": {
+    "type": 0,
+    "ocType": 0,
+    "sign": "1",
+    "organizationCode": "VHLC",
+    "organizationCodeNo": "A51040000P",
+    "organizationName": "屏東榮民總醫院",
+    "no": "1151007311",
+    "preNo": null,
+    "tempDraftId": null,
+    "outgoingNo": "1151007311",
+    "showSendNo": true,
+    "archive": {
+      "yearNumber": "115",
+      "classificationNumber": "0625",
+      "caseSequenceNo": "",
+      "volumeNumber": "",
+      "itemNumber": "",
+      "keepYear": "3年"
+    },
+    "incoming": {
+      "no": null,
+      "incomingPrefix": null,
+      "documentType": null,
+      "incomingDate": null,
+      "incomingSource": null,
+      "di": {
+        "name": "",
+        "fileName": null,
+        "fileSize": 0,
+        "fileType": null,
+        "description": null,
+        "url": null,
+        "base64": null,
+        "serverPath": null,
+        "type": 0,
+        "tempFile": {
+          "path": null,
+          "hash": null,
+          "referenceFile": null
+        },
+        "extension": null
+      },
+      "imageFile": {
+        "name": "",
+        "fileName": null,
+        "fileSize": 0,
+        "fileType": null,
+        "description": null,
+        "url": null,
+        "base64": null,
+        "serverPath": null,
+        "type": 0,
+        "tempFile": {
+          "path": null,
+          "hash": null,
+          "referenceFile": null
+        },
+        "extension": null
+      },
+      "incomingFiles": []
+    },
+    "incomingSubs": [],
+    "outboundConsultation": {
+      "type": 0,
+      "organizationName": null,
+      "organizationCodeNo": null,
+      "no": null,
+      "incomingDate": null,
+      "zipUrl": null,
+      "siPath": null,
+      "saveType": 0,
+      "ocDrafts": [],
+      "ocFlowSteps": []
+    },
+    "referenceLinks": [],
+    "saveId": "20260707110642105",
+    "extension": "{\"integrationCode\":\"\",\"modalAttachment\":[{\"id\":\"doc1\",\"maxNo\":1}],\"modalSend\":[{\"id\":\"doc1\",\"printKeepSecret\":false,\"recipient\":[{\"type\":\"正本\",\"mappingName\":\"對應名稱\",\"recipientFullName\":\"__VENDOR_COMPANY__\",\"outgoingMappingHide\":false,\"id\":1},{\"type\":\"副本\",\"mappingName\":\"工務室\",\"recipientFullName\":\"本院工務室\",\"outgoingMappingHide\":false,\"id\":2},{\"type\":\"抄本\",\"mappingName\":null,\"recipientFullName\":\"李龍傑\",\"outgoingMappingHide\":false},{\"type\":\"抄本\",\"mappingName\":null,\"recipientFullName\":\"\",\"outgoingMappingHide\":false}],\"sentInfos\":{\"exchange\":false,\"innerExchange\":false,\"print\":true,\"externalBulletinBoardPost\":true,\"docToEmail\":true}}]}"
+  },
+  "currentFlowStep": {
+    "flowInfo": {
+      "flowId": "",
+      "prevFlows": [],
+      "flowIdentity": "",
+      "color": 0,
+      "date": "2026-07-15T00:01:04.214Z",
+      "createDate": "2026-07-15T00:01:04.214Z",
+      "editMode": "唯讀",
+      "commentTitle": "承辦意見",
+      "commentType": "arbitrary",
+      "commentByText": "",
+      "commentBySignObjects": [],
+      "certType": null,
+      "cert": null,
+      "referenceFlowId": null,
+      "circulationType": 0,
+      "circulationClass": 0,
+      "multipleSend": false,
+      "user": {
+        "organizationGroup": null,
+        "id": "5132",
+        "account": "P028",
+        "userName": "李龍傑",
+        "zip": "",
+        "address": "",
+        "phone": "08-7704115",
+        "ext": "88943",
+        "fax": "08-7700689",
+        "email": "p028@ptvgh.gov.tw",
+        "organizationName": "屏東榮民總醫院",
+        "organizationCode": "VHLC",
+        "organizationCodeNo": "A51040000P",
+        "unitName": "工務室",
+        "unitFullName": "工務室",
+        "departmentName": "工務室",
+        "departmentFullName": "",
+        "unitLevel": "1",
+        "unitId": "389",
+        "unitCode": "",
+        "departmentId": "389",
+        "departmentCode": "",
+        "positionName": "組員",
+        "positionId": "8269",
+        "chief": false,
+        "chiefByMyself": false,
+        "title": "組員",
+        "approval": "0",
+        "agent": false,
+        "agentFullName": null,
+        "agentId": null,
+        "agentPositionName": null,
+        "agentPositionId": null,
+        "agentTitle": null,
+        "agentExt": null,
+        "certificateSerialNumber": "5A49917DEA93D4E95E98EBB61AE97CB3",
+        "certificateSubject": null,
+        "certificateNationalIdentification": null,
+        "isOrganizationChief": false,
+        "subOrganization": false,
+        "roleIds": [
+          "1",
+          "4"
+        ],
+        "notation": null,
+        "sysId": null,
+        "agentSysId": null
+      }
+    },
+    "draftInfo": {
+      "draftSN": 1,
+      "recipientSN": 2
+    },
+    "attachInfo": {
+      "maxSize": 20971520,
+      "attachSN": 0,
+      "totalSize": 0,
+      "editable": true
+    },
+    "drafts": [
+      {
+        "id": "doc1",
+        "createFlowId": "First",
+        "version": 1,
+        "name": "函",
+        "defaultFlowName": null,
+        "defaultTemplateName": "函",
+        "templateName": "函",
+        "templateType": null,
+        "siDiType": "0",
+        "templateVersion": null,
+        "outgoing": true,
+        "outgoingNo": null,
+        "outgoingAttach": true,
+        "exchangable": true,
+        "draftFormId": "main_doc1",
+        "no": "",
+        "templateNotation": "稿",
+        "autoTemplateNotation": false,
+        "documentType": "2",
+        "subDocumentType": "1",
+        "documentCategory": "稿",
+        "displayOrder": 1,
+        "draftType": "0",
+        "signType": 9,
+        "recipientAttachMapping": false,
+        "attachArchiving": false,
+        "attachMemoType": "0",
+        "attachMemoText": "",
+        "attachLargerInfo": {
+          "url": "",
+          "depiction": "",
+          "code": ""
+        },
+        "attachs": [],
+        "html": "",
+        "createUserName": "李龍傑",
+        "createDepartmentId": "389",
+        "createDepartmentName": "工務室",
+        "createDepartmentFullName": "",
+        "approved": true,
+        "viewed": true,
+        "isSent": true,
+        "announceDate": null,
+        "isUrgent": false,
+        "content": "",
+        "briefSubject": null,
+        "parentId": "",
+        "isParent": false,
+        "personnalDraftNo": null,
+        "sendDocument": null,
+        "$$mdSelectId": 1
+      }
+    ]
+  },
+  "serviceName": "SaveDoc",
+  "urlParm": {
+    "ODEFolderId": "702504",
+    "ODETypeName": "''",
+    "ODEIsAnnouncement": "false",
+    "ODECurrentUrl": "''",
+    "ReSend": "false",
+    "AutoReview": "false",
+    "random": "1266158119714608",
+    "page_Url": "https://ods.vghks.gov.tw/FolderSearch#/"
+  },
+  "draftsHtml": {
+    "draftHtml": [
+      {
+        "subject": "__SUBJECT__",
+        "html": "<div data-type=\"draftform\" style=\"position: relative; font-family: 標楷體;\" id=\"main_doc1\"><div id=\"firstpage_doc1\" style=\"width:465pt; min-height: 701pt;padding: 70pt 62pt 70pt 70pt\"><div spellcheck=\"false\" id=\"wrap_doc1\" style=\"position: relative;\"><article data-atfontfamily=\"標楷體\" data-atfontsize=\"14\" data-atdocumenttype=\"2\" data-atsubdocumenttype=\"1\" data-attemplatename=\"函\" contenteditable=\"true\"><div data-atfontfamily=\"標楷體\" data-atfontsize=\"20\" id=\"全銜_doc1\" data-atlineheight=\"120%\" data-atlinebreak=\"explicit\" data-atpaddingtop=\"0\" data-atparagraphstartindent=\"0\" data-attextalign=\"center\" data-atpaddingright=\"0\" data-atpaddingleft=\"0\" data-atparagraphtype=\"0\" data-attitle=\"\" data-atrootdefinition=\"1\" data-atlinespacingadjustable=\"0\" data-atfontsizeadjustable=\"0\" data-atindents=\"\" data-atserails=\"\" data-whitespacewrap=\"1\"><p><span data-ateditingmode=\"readOnly\" data-atisheader=\"0\" data-atisserial=\"0\" data-ateditinguser=\"\" data-atflowidentity=\"\">屏東榮民總醫院</span><span id=\"Suffix_doc1\" data-ateditingmode=\"readOnly\" data-atisheader=\"1\" data-atisserial=\"0\" data-ateditinguser=\"\" data-atflowidentity=\"\">　函 (稿)</span></p></div><div data-atfontfamily=\"標楷體\" data-atfontsize=\"12\" id=\"地址_doc1\" data-atlineheight=\"100%\" data-atpaddingtop=\"12\" data-atparagraphstartindent=\"320\" data-attextindent=\"-60\" data-atpaddingright=\"0\" data-atpaddingleft=\"0\" data-atparagraphtype=\"0\" data-attitle=\"機關地址：\" data-atrootdefinition=\"1\" data-atlinespacingadjustable=\"0\" data-atfontsizeadjustable=\"0\" data-atindents=\"\" data-atserails=\"\" data-whitespacewrap=\"1\"><p><span data-ateditingmode=\"readOnly\" data-atisheader=\"1\" data-atisserial=\"0\" data-ateditinguser=\"\" data-atflowidentity=\"\">機關地址：</span><span data-ateditingmode=\"readOnly\" data-atisheader=\"0\" data-atisserial=\"0\" data-ateditinguser=\"\" data-atflowidentity=\"\">900053 屏東縣屏東市榮總東路1號</span></p></div><div data-atfontfamily=\"標楷體\" data-atfontsize=\"12\" id=\"聯絡方式_doc1\" data-atlineheight=\"100%\" data-atpaddingtop=\"0\" data-atparagraphstartindent=\"260\" data-atpaddingright=\"0\" data-atpaddingleft=\"0\" data-atparagraphtype=\"0\" data-attitle=\"\" data-atrootdefinition=\"1\" data-atlinespacingadjustable=\"0\" data-atfontsizeadjustable=\"0\" data-atindents=\"\" data-atserails=\"\" data-whitespacewrap=\"1\" style=\"word-break: break-all;\"><div data-atfontfamily=\"標楷體\" data-atfontsize=\"12\" id=\"聯絡方式[1]_doc1\" data-atlineheight=\"100%\" data-atpaddingtop=\"0\" data-atparagraphstartindent=\"260\" data-atpaddingright=\"0\" data-atpaddingleft=\"0\" data-atparagraphtype=\"0\" data-attitle=\"\" data-atrootdefinition=\"0\" data-atlinespacingadjustable=\"0\" data-atfontsizeadjustable=\"0\" data-atindents=\"\" data-atserails=\"\" data-whitespacewrap=\"1\"><p><span data-ateditingmode=\"readOnly\" data-atisheader=\"0\" data-atisserial=\"0\" data-ateditinguser=\"\" data-atflowidentity=\"\">聯絡人：李龍傑</span></p></div><div data-atfontfamily=\"標楷體\" data-atfontsize=\"12\" id=\"聯絡方式[2]_doc1\" data-atlineheight=\"100%\" data-atpaddingtop=\"0\" data-atparagraphstartindent=\"260\" data-atpaddingright=\"0\" data-atpaddingleft=\"0\" data-atparagraphtype=\"0\" data-attitle=\"\" data-atrootdefinition=\"0\" data-atlinespacingadjustable=\"0\" data-atfontsizeadjustable=\"0\" data-atindents=\"\" data-atserails=\"\" data-whitespacewrap=\"1\"><p><span data-ateditingmode=\"readOnly\" data-atisheader=\"0\" data-atisserial=\"0\" data-ateditinguser=\"\" data-atflowidentity=\"\">聯絡電話：08-7704115　分機 88943</span></p></div><div data-atfontfamily=\"標楷體\" data-atfontsize=\"12\" id=\"聯絡方式[3]_doc1\" data-atlineheight=\"100%\" data-atpaddingtop=\"0\" data-atparagraphstartindent=\"260\" data-atpaddingright=\"0\" data-atpaddingleft=\"0\" data-atparagraphtype=\"0\" data-attitle=\"\" data-atrootdefinition=\"0\" data-atlinespacingadjustable=\"0\" data-atfontsizeadjustable=\"0\" data-atindents=\"\" data-atserails=\"\" data-whitespacewrap=\"1\"><p><span data-ateditingmode=\"readOnly\" data-atisheader=\"0\" data-atisserial=\"0\" data-ateditinguser=\"\" data-atflowidentity=\"\">電子郵件：p028@ptvgh.gov.tw</span></p></div></div><div data-atfontfamily=\"標楷體\" data-atfontsize=\"16\" id=\"會辦框加入點_doc1\" data-atlineheight=\"120%\" data-atpaddingtop=\"0\" data-atparagraphstartindent=\"0\" data-atpaddingright=\"0\" data-atpaddingleft=\"0\" data-atparagraphtype=\"0\" data-attitle=\"\" data-atrootdefinition=\"1\" data-atlinespacingadjustable=\"0\" data-atfontsizeadjustable=\"0\" data-atindents=\"\" data-atserails=\"\" data-whitespacewrap=\"1\"></div><div data-atfontfamily=\"標楷體\" data-atfontsize=\"16\" id=\"受文者_doc1\" data-atlineheight=\"120%\" data-atpaddingtop=\"0\" data-atparagraphstartindent=\"64\" data-attextindent=\"-64\" data-atpaddingright=\"0\" data-atpaddingleft=\"0\" data-atparagraphtype=\"0\" data-attitle=\"受文者：\" data-atrootdefinition=\"1\" data-atlinespacingadjustable=\"0\" data-atfontsizeadjustable=\"0\" data-atindents=\"\" data-atserails=\"\" data-whitespacewrap=\"1\"><p><span data-ateditingmode=\"readWrite\" data-atisheader=\"1\" data-atisserial=\"0\" data-ateditinguser=\"\" data-atflowidentity=\"\">受文者：</span><span data-ateditingmode=\"readWrite\" data-atisheader=\"0\" data-atisserial=\"0\" data-ateditinguser=\"\" data-atflowidentity=\"\">如行文單位</span></p></div><div data-atfontfamily=\"標楷體\" data-atfontsize=\"12\" id=\"發文日期_doc1\" data-atlineheight=\"120%\" data-atpaddingtop=\"8\" data-atparagraphstartindent=\"60\" data-attextindent=\"-60\" data-atpaddingright=\"0\" data-atpaddingleft=\"0\" data-atparagraphtype=\"0\" data-attitle=\"發文日期：\" data-atrootdefinition=\"1\" data-atlinespacingadjustable=\"0\" data-atfontsizeadjustable=\"0\" data-atindents=\"\" data-atserails=\"\" data-whitespacewrap=\"1\"><p><span data-ateditingmode=\"readOnly\" data-atisheader=\"1\" data-atisserial=\"0\" data-ateditinguser=\"\" data-atflowidentity=\"\">發文日期：</span><span data-ateditingmode=\"readOnly\" data-ateditinguser=\"\" data-atflowidentity=\"\" data-atisheader=\"0\" data-atisserial=\"0\">__DATE__</span></p></div><div data-atfontfamily=\"標楷體\" data-atfontsize=\"12\" id=\"發文字號_doc1\" data-atlineheight=\"120%\" data-atpaddingtop=\"0\" data-atparagraphstartindent=\"60\" data-attextindent=\"-60\" data-atpaddingright=\"0\" data-atpaddingleft=\"0\" data-atparagraphtype=\"0\" data-attitle=\"發文字號：\" data-atrootdefinition=\"1\" data-atlinespacingadjustable=\"0\" data-atfontsizeadjustable=\"0\" data-atindents=\"\" data-atserails=\"\" data-whitespacewrap=\"1\"><p><span data-ateditingmode=\"readOnly\" data-atisheader=\"1\" data-atisserial=\"0\" data-ateditinguser=\"\" data-atflowidentity=\"\">發文字號：</span><span data-ateditingmode=\"readOnly\" data-ateditinguser=\"\" data-atflowidentity=\"\" data-atisheader=\"0\" data-atisserial=\"0\">屏總工字第__NO__號</span></p></div><div data-atfontfamily=\"標楷體\" data-atfontsize=\"12\" id=\"速別_doc1\" data-atlineheight=\"120%\" data-atpaddingtop=\"0\" data-atparagraphstartindent=\"36\" data-attextindent=\"-36\" data-atpaddingright=\"0\" data-atpaddingleft=\"0\" data-atparagraphtype=\"0\" data-attitle=\"速別：\" data-atrootdefinition=\"1\" data-atlinespacingadjustable=\"0\" data-atfontsizeadjustable=\"0\" data-atindents=\"\" data-atserails=\"\" data-whitespacewrap=\"1\"><p><span data-ateditingmode=\"readOnly\" data-atisheader=\"1\" data-atisserial=\"0\" data-ateditinguser=\"\" data-atflowidentity=\"\">速別：</span><span data-ateditingmode=\"readOnly\" data-atisheader=\"0\" data-atisserial=\"0\" data-ateditinguser=\"\" data-atflowidentity=\"\">普通件</span></p></div><div data-atfontfamily=\"標楷體\" data-atfontsize=\"12\" id=\"密等及解密條件或保密期限_doc1\" data-atlineheight=\"120%\" data-atpaddingtop=\"0\" data-atparagraphstartindent=\"156\" data-attextindent=\"-156\" data-atpaddingright=\"0\" data-atpaddingleft=\"0\" data-atparagraphtype=\"0\" data-attitle=\"密等及解密條件或保密期限：\" data-atrootdefinition=\"1\" data-atlinespacingadjustable=\"0\" data-atfontsizeadjustable=\"0\" data-atindents=\"\" data-atserails=\"\" data-whitespacewrap=\"1\"><p><span data-ateditingmode=\"readOnly\" data-atisheader=\"1\" data-atisserial=\"0\" data-ateditinguser=\"\" data-atflowidentity=\"\">密等及解密條件或保密期限：</span></p></div><div data-atfontfamily=\"標楷體\" data-atfontsize=\"12\" id=\"附件_doc1\" data-atlineheight=\"120%\" data-atpaddingtop=\"0\" data-atparagraphstartindent=\"36\" data-attextindent=\"-36\" data-atpaddingright=\"0\" data-atpaddingleft=\"0\" data-atparagraphtype=\"0\" data-attitle=\"附件：\" data-atrootdefinition=\"1\" data-atlinespacingadjustable=\"0\" data-atfontsizeadjustable=\"0\" data-atindents=\"\" data-atserails=\"\" data-whitespacewrap=\"1\"><p><span data-ateditingmode=\"readOnly\" data-atisheader=\"1\" data-atisserial=\"0\" data-ateditinguser=\"\" data-atflowidentity=\"\">附件：</span><span data-ateditingmode=\"readOnly\" data-ateditinguser=\"\" data-atflowidentity=\"\" data-atisheader=\"0\" data-atisserial=\"0\"> </span></p></div><div data-atfontfamily=\"標楷體\" data-atfontsize=\"16\" id=\"批示框加入點_doc1\" data-atlineheight=\"120%\" data-atpaddingtop=\"0\" data-atparagraphstartindent=\"0\" data-atpaddingright=\"0\" data-atpaddingleft=\"0\" data-atparagraphtype=\"0\" data-attitle=\"\" data-atrootdefinition=\"1\" data-atlinespacingadjustable=\"0\" data-atfontsizeadjustable=\"0\" data-atindents=\"\" data-atserails=\"\" data-whitespacewrap=\"1\"></div><div data-atfontfamily=\"標楷體\" data-atfontsize=\"16\" id=\"主旨_doc1\" data-atjustificationrule=\"space\" data-atlineheight=\"150%\" data-atpaddingtop=\"5\" data-atparagraphstartindent=\"48\" data-attextalign=\"justify\" data-attextalignlast=\"left\" data-attextindent=\"-48\" data-attextjustify=\"distribute\" data-atpaddingright=\"0\" data-atpaddingleft=\"0\" data-atsubjectprecedence=\"0\" data-atparagraphtype=\"0\" data-attitle=\"主旨：\" data-atrootdefinition=\"1\" data-atlinespacingadjustable=\"1\" data-atfontsizeadjustable=\"0\" data-atindents=\"\" data-atserails=\"\" data-whitespacewrap=\"1\"><p><span data-ateditingmode=\"readWrite\" data-atisheader=\"1\" data-atisserial=\"0\" data-ateditinguser=\"\" data-atflowidentity=\"\">主旨：</span><span data-ateditingmode=\"readWrite\" data-atisheader=\"0\" data-atisserial=\"0\" data-ateditinguser=\"\" data-atflowidentity=\"\">__SUBJECT__</span></p></div><div data-athidden=\"0\" data-atfontfamily=\"標楷體\" data-atfontsize=\"16\" id=\"說明_doc1\" data-atjustificationrule=\"space\" data-atlineheight=\"150%\" data-atpaddingtop=\"0\" data-atparagraphstartindent=\"48\" data-attextalign=\"justify\" data-attextalignlast=\"left\" data-attextindent=\"-48\" data-attextjustify=\"distribute\" data-atpaddingright=\"0\" data-atpaddingleft=\"0\" data-atparagraphtype=\"1\" data-attitle=\"說明：\" data-atrootdefinition=\"1\" data-atlinespacingadjustable=\"1\" data-atfontsizeadjustable=\"0\" data-atindents=\"0,0,0,0,0,0,0,0\" data-atserails=\"一、,(一),１、,(１),甲、,(甲),子、,(子)\" data-whitespacewrap=\"1\"><p data-atfontfamily=\"標楷體\" data-atfontsize=\"16\" data-atlineheight=\"150%\" data-atpaddingtop=\"0\" data-atparagraphstartindent=\"48\" data-attextindent=\"-48\" data-atparagraphlevel=\"0\" data-atrootdefinition=\"0\" data-atrowspacing=\"0\"><span data-ateditingmode=\"readWrite\" data-atisheader=\"1\" data-atisserial=\"0\" data-ateditinguser=\"\" data-atflowidentity=\"\">說明：</span></p><p data-atfontfamily=\"標楷體\" data-atfontsize=\"16\" data-atlineheight=\"150%\" data-atpaddingtop=\"0\" data-atparagraphstartindent=\"48\" data-attextindent=\"-32\" data-atparagraphlevel=\"1\" data-atrootdefinition=\"0\" data-atrowspacing=\"0\"><span data-ateditingmode=\"readWrite\" data-atisheader=\"0\" data-atisserial=\"1\" data-ateditinguser=\"\" data-atflowidentity=\"\">一、</span><span data-ateditingmode=\"readWrite\" data-atisheader=\"0\" data-atisserial=\"0\" data-ateditinguser=\"\" data-atflowidentity=\"\">__DESC_1__</span></p><p data-atfontfamily=\"標楷體\" data-atfontsize=\"16\" data-atlineheight=\"150%\" data-atpaddingtop=\"0\" data-atparagraphstartindent=\"48\" data-attextindent=\"-32\" data-atparagraphlevel=\"1\" data-atrootdefinition=\"0\" data-atrowspacing=\"0\"><span data-ateditingmode=\"readWrite\" data-atisheader=\"0\" data-atisserial=\"1\" data-ateditinguser=\"\" data-atflowidentity=\"\">二、</span><span data-ateditingmode=\"readWrite\" data-atisheader=\"0\" data-atisserial=\"0\" data-ateditinguser=\"\" data-atflowidentity=\"\">__DESC_2__</span></p><p data-atfontfamily=\"標楷體\" data-atfontsize=\"16\" data-atlineheight=\"150%\" data-atpaddingtop=\"0\" data-atparagraphstartindent=\"48\" data-attextindent=\"-32\" data-atparagraphlevel=\"1\" data-atrootdefinition=\"0\" data-atrowspacing=\"0\"><span data-ateditingmode=\"readWrite\" data-atisheader=\"0\" data-atisserial=\"1\" data-ateditinguser=\"\" data-atflowidentity=\"\">三、</span><span data-ateditingmode=\"readWrite\" data-atisheader=\"0\" data-atisserial=\"0\" data-ateditinguser=\"\" data-atflowidentity=\"\">__DESC_3__</span></p></div><div data-athidden=\"1\" data-atfontfamily=\"標楷體\" data-atfontsize=\"16\" id=\"辦法_doc1\" data-atjustificationrule=\"space\" data-atlineheight=\"150%\" data-atpaddingtop=\"0\" data-atparagraphstartindent=\"48\" data-attextalign=\"justify\" data-attextalignlast=\"left\" data-attextindent=\"-48\" data-attextjustify=\"distribute\" data-atpaddingright=\"0\" data-atpaddingleft=\"0\" data-atparagraphtype=\"1\" data-attitle=\"辦法：\" data-atrootdefinition=\"1\" data-atlinespacingadjustable=\"1\" data-atfontsizeadjustable=\"0\" data-atindents=\"0,0,0,0,0,0,0,0\" data-atserails=\"一、,(一),１、,(１),甲、,(甲),子、,(子)\" data-whitespacewrap=\"1\"><p data-atfontfamily=\"標楷體\" data-atfontsize=\"16\" data-atlineheight=\"150%\" data-atpaddingtop=\"0\" data-atparagraphstartindent=\"48\" data-attextindent=\"-48\" data-atparagraphlevel=\"0\" data-atrootdefinition=\"0\" data-atrowspacing=\"0\"><span data-ateditingmode=\"readWrite\" data-atisheader=\"1\" data-atisserial=\"0\" data-ateditinguser=\"\" data-atflowidentity=\"\">辦法：</span></p></div><div data-atfontfamily=\"標楷體\" data-atfontsize=\"12\" id=\"正本_doc1\" data-atlineheight=\"120%\" data-atpaddingtop=\"24\" data-atparagraphstartindent=\"36\" data-attextindent=\"-36\" data-atpaddingright=\"0\" data-atpaddingleft=\"0\" data-atparagraphtype=\"0\" data-attitle=\"正本：\" data-atrootdefinition=\"1\" data-atlinespacingadjustable=\"0\" data-atfontsizeadjustable=\"0\" data-atindents=\"\" data-atserails=\"\" data-whitespacewrap=\"1\"><p><span data-ateditingmode=\"readOnly\" data-atisheader=\"1\" data-atisserial=\"0\" data-ateditinguser=\"\" data-atflowidentity=\"\">正本：</span><span data-ateditingmode=\"readOnly\" data-ateditinguser=\"\" data-atflowidentity=\"\" data-atisheader=\"0\" data-atisserial=\"0\">__VENDOR_COMPANY__</span></p></div><div data-atfontfamily=\"標楷體\" data-atfontsize=\"12\" id=\"副本_doc1\" data-atlineheight=\"120%\" data-atpaddingtop=\"0\" data-atparagraphstartindent=\"36\" data-attextindent=\"-36\" data-atpaddingright=\"0\" data-atpaddingleft=\"0\" data-atparagraphtype=\"0\" data-attitle=\"副本：\" data-atrootdefinition=\"1\" data-atlinespacingadjustable=\"0\" data-atfontsizeadjustable=\"0\" data-atindents=\"\" data-atserails=\"\" data-whitespacewrap=\"1\"><p><span data-ateditingmode=\"readOnly\" data-atisheader=\"1\" data-atisserial=\"0\" data-ateditinguser=\"\" data-atflowidentity=\"\">副本：</span><span data-ateditingmode=\"readOnly\" data-ateditinguser=\"\" data-atflowidentity=\"\" data-atisheader=\"0\" data-atisserial=\"0\">本院工務室</span></p></div><div data-atfontfamily=\"標楷體\" data-atfontsize=\"16\" id=\"署名_doc1\" data-atlineheight=\"120%\" data-atpaddingtop=\"10\" data-atparagraphstartindent=\"0\" data-atpaddingright=\"0\" data-atpaddingleft=\"0\" data-atparagraphtype=\"0\" data-attitle=\"\" data-atrootdefinition=\"1\" data-atlinespacingadjustable=\"0\" data-atfontsizeadjustable=\"0\" data-atindents=\"\" data-atserails=\"\" data-whitespacewrap=\"1\"><p><span data-ateditingmode=\"readOnly\" data-ateditinguser=\"\" data-atflowidentity=\"\" data-atisheader=\"0\" data-atisserial=\"0\">院長 王 ○ ○</span></p></div><div data-atfontfamily=\"標楷體\" data-atfontsize=\"16\" id=\"代理_doc1\" data-atlineheight=\"120%\" data-atpaddingtop=\"8\" data-atparagraphstartindent=\"16\" data-atpaddingright=\"0\" data-atpaddingleft=\"0\" data-atparagraphtype=\"0\" data-attitle=\"\" data-atrootdefinition=\"1\" data-atlinespacingadjustable=\"0\" data-atfontsizeadjustable=\"0\" data-atindents=\"\" data-atserails=\"\" data-whitespacewrap=\"1\"></div><div data-atfontfamily=\"標楷體\" data-atfontsize=\"12\" id=\"會辦單位_doc1\" data-atlineheight=\"120%\" data-atpaddingtop=\"15\" data-atparagraphstartindent=\"60\" data-attextindent=\"-60\" data-atpaddingright=\"0\" data-atpaddingleft=\"0\" data-atparagraphtype=\"0\" data-attitle=\"會辦單位：\" data-atrootdefinition=\"1\" data-atlinespacingadjustable=\"0\" data-atfontsizeadjustable=\"0\" data-atindents=\"\" data-atserails=\"\" data-whitespacewrap=\"1\"><p><span data-ateditingmode=\"readOnly\" data-atisheader=\"1\" data-atisserial=\"0\" data-ateditinguser=\"\" data-atflowidentity=\"\">會辦單位：</span></p></div><div data-atfontfamily=\"標楷體\" data-atfontsize=\"12\" id=\"決行層級_doc1\" data-atlineheight=\"120%\" data-atpaddingtop=\"0\" data-atparagraphstartindent=\"0\" data-atpaddingright=\"0\" data-atpaddingleft=\"0\" data-atparagraphtype=\"0\" data-attitle=\"\" data-atrootdefinition=\"1\" data-atlinespacingadjustable=\"0\" data-atfontsizeadjustable=\"0\" data-atindents=\"\" data-atserails=\"\" data-whitespacewrap=\"1\"><p><span data-ateditingmode=\"readOnly\" data-atisheader=\"0\" data-atisserial=\"0\" data-ateditinguser=\"\" data-atflowidentity=\"\">第二層決行</span></p></div><div data-athidden=\"1\" data-atfontfamily=\"標楷體\" data-atfontsize=\"12\" id=\"歸檔案情資訊應用限制_doc1\" data-atlineheight=\"120%\" data-atpaddingtop=\"0\" data-atparagraphstartindent=\"0\" data-atpaddingright=\"0\" data-atpaddingleft=\"0\" data-atparagraphtype=\"0\" data-attitle=\"\" data-atrootdefinition=\"1\" data-atlinespacingadjustable=\"0\" data-atfontsizeadjustable=\"0\" data-atindents=\"\" data-atserails=\"\" data-whitespacewrap=\"1\"></div><div data-atfontfamily=\"標楷體\" data-atfontsize=\"16\" id=\"歸檔框加入點_doc1\" data-atlineheight=\"120%\" data-atpaddingtop=\"0\" data-atparagraphstartindent=\"0\" data-atpaddingright=\"0\" data-atpaddingleft=\"0\" data-atparagraphtype=\"0\" data-attitle=\"\" data-atrootdefinition=\"1\" data-atlinespacingadjustable=\"0\" data-atfontsizeadjustable=\"0\" data-atindents=\"\" data-atserails=\"\" data-whitespacewrap=\"1\"></div></article><div class=\"at-approvearea at-approvearea-auto0 at-approvearea-table at-signobject-target at-approvearea-kvgh at-approvearea-cssv1\" data-atfontfamily=\"標楷體\" style=\"position: relative;\"><table class=\"at-includeHeaderTable\" style=\"width:100%\"><thead></thead><tbody style=\"vertical-align: top;\"><tr><td class=\"at-header at-header1\" style=\"font-size: 12pt; width: 31%; text-align: left; cursor: default;\">承辦單位</td><td class=\"at-header at-header2\" style=\"font-size: 12pt; width: 45%; text-align: left; cursor: default;\">會辦單位</td><td class=\"at-header at-header3\" style=\"font-size: 12pt; width: 24%; text-align: left; cursor: default;\">決行</td></tr></tbody></table><table style=\"width:100%\"><thead></thead><tbody style=\"vertical-align: top;\"><tr style=\"width:100%\"><td style=\"width:31%\"><table><thead></thead><tbody style=\"vertical-align: top;\"><tr><td class=\"at-aaOrganizer\"></td></tr></tbody></table></td><td style=\"width:45%\"><table><thead></thead><tbody style=\"vertical-align: top;\"><tr><td class=\"at-aaCirculate\"></td></tr></tbody></table></td><td style=\"width:24%\"><table><thead></thead><tbody style=\"vertical-align: top;\"><tr><td class=\"at-aaApprove\"></td></tr></tbody></table></td></tr></tbody></table><div class=\"at-roomformouse\" style=\"width:100%;height:160pt;\"></div></div></div></div><div id=\"oemetadata_doc1\" class=\"at-oemetadata\" data-priority=\"{&quot;value&quot;:&quot;1&quot;,&quot;name&quot;:&quot;普通件&quot;}\" data-confidentiality=\"{&quot;confidentiality&quot;:{&quot;value&quot;:&quot;1&quot;,&quot;name&quot;:&quot;&quot;},&quot;decryptCondition&quot;:{&quot;value&quot;:&quot;&quot;,&quot;name&quot;:&quot;&quot;,&quot;number&quot;:&quot;Z&quot;},&quot;decryptDate&quot;:null,&quot;decryptConditionDesc&quot;:&quot;&quot;}\" data-proposemethod=\"{&quot;displayOrder&quot;:3,&quot;value&quot;:&quot;以稿代簽&quot;,&quot;name&quot;:&quot;以稿代簽&quot;}\" data-approvallevel=\"{&quot;displayOrder&quot;:1,&quot;value&quot;:2,&quot;name&quot;:&quot;第二層決行&quot;}\" data-contacts=\"{&quot;聯絡方式&quot;:[&quot;聯絡人：李龍傑&quot;,&quot;聯絡電話：08-7704115&quot;,&quot;電子郵件：p028@ptvgh.gov.tw&quot;],&quot;機關地址&quot;:&quot;900053 屏東縣屏東市榮總東路1號&quot;,&quot;分機：&quot;:&quot;88943&quot;,&quot;資訊來源&quot;:0}\" data-title=\"{&quot;main&quot;:&quot;1&quot;,&quot;value&quot;:&quot;A51040000P&quot;,&quot;outgoingOrgCode&quot;:&quot;A51040000P&quot;,&quot;name&quot;:&quot;屏東榮民總醫院&quot;,&quot;address&quot;:&quot;屏東縣屏東市榮總東路1號&quot;,&quot;zip&quot;:&quot;900053&quot;,&quot;draftSignatures&quot;:[&quot;院長 王 ○ ○&quot;],&quot;sendWords&quot;:[&quot;屏總工&quot;],&quot;signatures&quot;:[&quot;院長 王瑞祥&quot;],&quot;level&quot;:3}\" data-signature=\"{&quot;draftSignature&quot;:{&quot;text&quot;:&quot;院長 王 ○ ○&quot;},&quot;signature&quot;:{&quot;text&quot;:&quot;院長 王瑞祥&quot;}}\" data-agentsignature=\"\" data-outgoingnoandprefix=\"{&quot;sendWord&quot;:&quot;屏總工&quot;,&quot;outgoingNo&quot;:&quot;1151007311&quot;,&quot;showSendNo&quot;:true}\" data-filenumber=\"{&quot;yearNumber&quot;:&quot;115&quot;,&quot;classificationNumber&quot;:&quot;0625&quot;,&quot;caseSequenceNo&quot;:&quot;&quot;,&quot;volumeNumber&quot;:&quot;&quot;,&quot;itemNumber&quot;:&quot;&quot;}\" data-filenumberperiod=\"&quot;3年&quot;\" data-circulateunits=\"{&quot;circulations&quot;:[],&quot;circulationFormIds&quot;:[],&quot;main&quot;:true}\" data-attachment=\" \" data-original=\"{&quot;name&quot;:&quot;正本&quot;,&quot;includeAttachment&quot;:true,&quot;defaultIncludeAttachment&quot;:true,&quot;showIncludeAttachMemo&quot;:false,&quot;printCopyType&quot;:true,&quot;required&quot;:true,&quot;addRecipientInfo&quot;:null,&quot;recipients&quot;:[{&quot;id&quot;:1,&quot;no&quot;:1,&quot;code&quot;:null,&quot;address&quot;:&quot;__VENDOR_ADDRESS__&quot;,&quot;alias&quot;:&quot;&quot;,&quot;deliveryMethod&quot;:2,&quot;exchangable&quot;:false,&quot;externalBulletinBoard&quot;:false,&quot;groupType&quot;:null,&quot;isSignature&quot;:false,&quot;organization&quot;:&quot;&quot;,&quot;organizationCode&quot;:&quot;&quot;,&quot;recipientCode&quot;:&quot;&quot;,&quot;recipientFullName&quot;:&quot;__VENDOR_COMPANY__&quot;,&quot;recipientGroupId&quot;:null,&quot;recipientGroupType&quot;:null,&quot;recipientType&quot;:&quot;T&quot;,&quot;recipientUnitCode&quot;:&quot;&quot;,&quot;state&quot;:&quot;T&quot;,&quot;zip&quot;:&quot;__VENDOR_ZIP__&quot;,&quot;email&quot;:&quot;&quot;,&quot;editGroupSelected&quot;:null,&quot;customGroupSelected&quot;:null,&quot;isPost&quot;:true,&quot;isPrint&quot;:false,&quot;mappingName&quot;:&quot;對應名稱&quot;,&quot;attachment&quot;:true,&quot;attachMemoText&quot;:&quot;&quot;,&quot;attachs&quot;:[],&quot;description&quot;:&quot;含附件&quot;,&quot;type&quot;:&quot;正本&quot;,&quot;mergePrints&quot;:[],&quot;outgoingMappingHide&quot;:false,&quot;outgoingMappingName&quot;:&quot;__VENDOR_COMPANY__&quot;,&quot;recipientGroupRecipients&quot;:[],&quot;sendDate&quot;:&quot;2026-07-03T02:29:12Z&quot;}],&quot;limitExchange&quot;:false}\" data-copy=\"{&quot;name&quot;:&quot;副本&quot;,&quot;includeAttachment&quot;:false,&quot;defaultIncludeAttachment&quot;:false,&quot;showIncludeAttachMemo&quot;:true,&quot;printCopyType&quot;:true,&quot;required&quot;:false,&quot;addRecipientInfo&quot;:null,&quot;recipients&quot;:[{&quot;id&quot;:2,&quot;no&quot;:1,&quot;code&quot;:null,&quot;address&quot;:&quot;&quot;,&quot;alias&quot;:&quot;&quot;,&quot;deliveryMethod&quot;:5,&quot;exchangable&quot;:false,&quot;externalBulletinBoard&quot;:false,&quot;groupType&quot;:null,&quot;isSignature&quot;:false,&quot;organization&quot;:null,&quot;organizationCode&quot;:null,&quot;recipientCode&quot;:&quot;&quot;,&quot;recipientFullName&quot;:&quot;本院工務室&quot;,&quot;recipientGroupId&quot;:null,&quot;recipientGroupType&quot;:null,&quot;recipientType&quot;:&quot;I&quot;,&quot;recipientUnitCode&quot;:&quot;U_389&quot;,&quot;state&quot;:&quot;T&quot;,&quot;zip&quot;:&quot;&quot;,&quot;email&quot;:&quot;&quot;,&quot;editGroupSelected&quot;:null,&quot;customGroupSelected&quot;:null,&quot;isPost&quot;:true,&quot;isPrint&quot;:false,&quot;mappingName&quot;:&quot;工務室&quot;,&quot;attachment&quot;:false,&quot;attachMemoText&quot;:&quot;&quot;,&quot;attachs&quot;:[],&quot;description&quot;:&quot;&quot;,&quot;type&quot;:&quot;副本&quot;,&quot;mergePrints&quot;:[],&quot;outgoingMappingHide&quot;:false,&quot;outgoingMappingName&quot;:&quot;本院工務室&quot;,&quot;recipientGroupRecipients&quot;:[],&quot;sendDate&quot;:&quot;2026-07-03T02:29:06Z&quot;}],&quot;limitExchange&quot;:false}\" data-transcription=\"{&quot;name&quot;:&quot;抄本&quot;,&quot;includeAttachment&quot;:false,&quot;defaultIncludeAttachment&quot;:false,&quot;showIncludeAttachMemo&quot;:true,&quot;printCopyType&quot;:true,&quot;required&quot;:false,&quot;addRecipientInfo&quot;:true,&quot;recipients&quot;:[],&quot;limitExchange&quot;:false}\" data-filingapplylimit=\"{&quot;value&quot;:&quot;&quot;,&quot;name&quot;:&quot;&quot;}\" data-outgoingdata=\"&quot;2026-07-03T02:28:57.049Z&quot;\"><margins><margin match=\"1\" left=\"70\" right=\"70\" top=\"70\" bottom=\"70\" htmlleft=\"70\" htmlright=\"62\" htmltop=\"70\" htmlbottom=\"70\"></margin></margins></div><div id=\"擬辦方式_doc1\" class=\"at-graphic\" data-graphic=\"graphic\" page=\"^1{1}$\" width=\"400\" style=\"position: absolute;font-size: 14pt;font-family: 標楷體;top: 40pt;left: 70pt; width:400pt; white-space: normal; text-align:;  text-align-last:; font-weight:;\" data-style=\"position: absolute;font-size: 14pt;font-family: 標楷體;top: 40pt;left: 70pt; width:400pt; white-space: normal; text-align:;  text-align-last:; font-weight:;\" data-atcolor=\"#000000\"><p><span>以稿代簽</span></p></div><div id=\"分類號標題_doc1\" class=\"at-graphic\" data-graphic=\"graphic\" page=\"^1{1}$\" width=\"0\" style=\"position: absolute;font-size: 10pt;font-family: 標楷體;top: 30pt;left: 435pt;  white-space: normal; text-align:;  text-align-last:; font-weight:;\" data-style=\"position: absolute;font-size: 10pt;font-family: 標楷體;top: 30pt;left: 435pt;  white-space: normal; text-align:;  text-align-last:; font-weight:;\" data-atcolor=\"#000000\"><p><span>檔　　號：</span></p></div><div id=\"分類號_doc1\" class=\"at-graphic\" data-graphic=\"graphic\" page=\"^1{1}$\" width=\"0\" style=\"position: absolute;font-size: 10pt;font-family: 標楷體;top: 30pt;left: 495pt;  white-space: normal; text-align:;  text-align-last:; font-weight:;\" data-style=\"position: absolute;font-size: 10pt;font-family: 標楷體;top: 30pt;left: 495pt;  white-space: normal; text-align:;  text-align-last:; font-weight:;\" data-atcolor=\"#000000\"><p><span>0625</span></p></div><div id=\"保存年限標題_doc1\" class=\"at-graphic\" data-graphic=\"graphic\" page=\"^1{1}$\" width=\"0\" style=\"position: absolute;font-size: 10pt;font-family: 標楷體;top: 43pt;left: 435pt;  white-space: normal; text-align:;  text-align-last:; font-weight:;\" data-style=\"position: absolute;font-size: 10pt;font-family: 標楷體;top: 43pt;left: 435pt;  white-space: normal; text-align:;  text-align-last:; font-weight:;\" data-atcolor=\"#000000\"><p><span>保存年限：</span></p></div><div id=\"保存年限_doc1\" class=\"at-graphic\" data-graphic=\"graphic\" page=\"^1{1}$\" width=\"0\" style=\"position: absolute;font-size: 10pt;font-family: 標楷體;top: 43pt;left: 495pt;  white-space: normal; text-align:;  text-align-last:; font-weight:;\" data-style=\"position: absolute;font-size: 10pt;font-family: 標楷體;top: 43pt;left: 495pt;  white-space: normal; text-align:;  text-align-last:; font-weight:;\" data-atcolor=\"#000000\"><p><span>3年</span></p></div><div id=\"頁碼_doc1\" class=\"at-graphic\" data-graphic=\"graphic\" page=\"[0-9]+\" width=\"200\" style=\"position: absolute;font-size: 10pt;font-family: 標楷體;top: 807pt;left: 269pt; width:200pt; white-space: normal; text-align:;  text-align-last:; font-weight:;\" data-style=\"position: absolute;font-size: 10pt;font-family: 標楷體;top: 807pt;left: 269pt; width:200pt; white-space: normal; text-align:;  text-align-last:; font-weight:;\" data-atcolor=\"#000000\" data-athtmlhidden=\"1\"><p><span>第%CurrentPage%頁　共%TotalPage%頁</span></p></div><div id=\"打字校對監印發文_doc1\" class=\"at-graphic\" data-graphic=\"graphic\" page=\"^1{1}$\" width=\"400\" style=\"position: absolute;font-size: 10pt;font-family: 標楷體;top: 780pt;left: 70pt; width:400pt; white-space: normal; text-align:;  text-align-last:; font-weight:;\" data-style=\"position: absolute;font-size: 10pt;font-family: 標楷體;top: 780pt;left: 70pt; width:400pt; white-space: normal; text-align:;  text-align-last:; font-weight:;\" data-atcolor=\"#000000\" data-athtmlhidden=\"1\"><p><span>校對　　　　　　監印　　　　　　發文</span></p></div></div>"
+      }
+    ],
+    "css": [
+      " [data-atfontsize=\"14\"] { font-size: 14pt; } [data-atfontsize=\"20\"] { font-size: 20pt; } [data-atfontsize=\"12\"] { font-size: 12pt; } [data-atfontsize=\"16\"] { font-size: 16pt; } [data-atfontfamily=\"標楷體\"] { font-family: 標楷體; } [data-attextindent=\"-60\"] { text-indent: -60pt; } [data-attextindent=\"-64\"] { text-indent: -64pt; } [data-attextindent=\"-36\"] { text-indent: -36pt; } [data-attextindent=\"-156\"] { text-indent: -156pt; } [data-attextindent=\"-48\"] { text-indent: -48pt; } [data-attextindent=\"-32\"] { text-indent: -32pt; } [data-attextindent=\"-14\"] { text-indent: -14pt; } [data-atparagraphstartindent=\"0\"] { margin-left: 0pt; } [data-atparagraphstartindent=\"320\"] { margin-left: 320pt; } [data-atparagraphstartindent=\"260\"] { margin-left: 260pt; } [data-atparagraphstartindent=\"64\"] { margin-left: 64pt; } [data-atparagraphstartindent=\"60\"] { margin-left: 60pt; } [data-atparagraphstartindent=\"36\"] { margin-left: 36pt; } [data-atparagraphstartindent=\"156\"] { margin-left: 156pt; } [data-atparagraphstartindent=\"48\"] { margin-left: 48pt; } [data-atparagraphstartindent=\"16\"] { margin-left: 16pt; } [data-attextalign=\"center\"] { text-align: center; } [data-attextalign=\"justify\"] { text-align: justify; text-justify: inter-ideograph; } [data-atpaddingtop=\"0\"] { margin-top: 0pt; } [data-atpaddingtop=\"12\"] { margin-top: 12pt; } [data-atpaddingtop=\"8\"] { margin-top: 8pt; } [data-atpaddingtop=\"5\"] { margin-top: 5pt; } [data-atpaddingtop=\"24\"] { margin-top: 24pt; } [data-atpaddingtop=\"10\"] { margin-top: 10pt; } [data-atpaddingtop=\"15\"] { margin-top: 15pt; } [data-atpaddingright=\"0\"] { padding-right: 0pt; } [data-atcolor=\"0x0000FF\"] { color: #0000FF; } [data-atcolor=\"#000000\"] { color: #000000; }[contenteditable]{outline: none;}[data-atbaselineshift=\"superscript\"]{vertical-align: super;font-size: smaller;}[data-atbaselineshift=\"subscript\"]{vertical-align: sub;font-size: smaller;}[data-atlinethrough=\"true\"]{text-decoration: line-through;}[data-atfontweight=\"bold\"]{font-weight:bold;}[data-atfontstyle=\"italic\"]{font-style:italic;}[data-attextdecoration=\"underline\"]{text-decoration:underline;}[data-atlinethrough=\"true\"][data-attextdecoration=\"underline\"]{text-decoration: line-through underline;}[data-whiteSpaceWrap=\"1\"]{white-space:pre-wrap; white-space:break-spaces;}",
+      "div[id='聯絡方式_doc1'] {margin-left:0} div[id='聯絡方式']{margin-left:0} div[id='說明_doc1'] {margin-left:0} div[id='說明']{margin-left:0} div[id='辦法_doc1'] {margin-left:0} div[id='辦法']{margin-left:0} div[id='簽核意見_doc1'] {margin-left:0} div[id='簽核意見']{margin-left:0} "
+    ]
+  }
+}

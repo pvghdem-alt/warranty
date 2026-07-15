@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { X, Plus, Edit3, Trash2, MessageCircle, AlertCircle, CheckCircle, Clock, Construction, Users } from 'lucide-react';
+import { X, Plus, Edit3, Trash2, MessageCircle, AlertCircle, CheckCircle, Clock, Construction, Users, FileText } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { getDisplayUrl } from '../lib/utils';
+import { downloadATX } from '../lib/atxGenerator';
 import { collection, addDoc, onSnapshot, query, orderBy, deleteDoc, doc, updateDoc, serverTimestamp, where, getDocs, getDoc } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType, parseFirestoreErrorToUserMsg } from '../lib/firebase';
 import LineNotifyModal from './LineNotifyModal';
@@ -189,6 +190,40 @@ export default function ProjectIssuesModal({ warrantyId, projectName, vendorName
     } catch (error) {
       handleFirestoreError(error, editingId ? OperationType.UPDATE : OperationType.CREATE, 'issues');
     }
+  };
+
+  const handleDownloadATX = async (issue: Issue) => {
+    let vendorInfo = { company: issue.vendorCompany, address: '', zipCode: '' };
+    try {
+      const vDoc = await getDoc(doc(db, 'vendorSettings', issue.vendorCompany));
+      const vData = vDoc.data();
+      if (vData) {
+        vendorInfo.address = vData.address || '';
+        vendorInfo.zipCode = vData.zipCode || '';
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    
+    let notifyDate = '未知';
+    let waitDays: number | string = '未知';
+    if (issue.createdAt) {
+      const date = issue.createdAt.toDate ? issue.createdAt.toDate() : new Date();
+      const rocYear = date.getFullYear() - 1911;
+      notifyDate = `${rocYear}年${date.getMonth() + 1}月${date.getDate()}日`;
+      waitDays = Math.floor((Date.now() - date.getTime()) / (1000 * 60 * 60 * 24));
+    }
+
+    downloadATX({
+      projectName: projectName,
+      vendors: [vendorInfo],
+      issues: [{
+        vendorCompany: issue.vendorCompany,
+        name: issue.issueName,
+        notifyDate,
+        waitDays
+      }]
+    });
   };
 
   const handleEdit = (issue: Issue) => {
@@ -566,8 +601,16 @@ export default function ProjectIssuesModal({ warrantyId, projectName, vendorName
                       <button
                         onClick={() => handleEdit(issue)}
                         className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                        title="編輯"
                       >
                         <Edit3 className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDownloadATX(issue)}
+                        className="p-1.5 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                        title="下載催告函 (ATX)"
+                      >
+                        <FileText className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => issue.id && setDeleteConfirm({ isOpen: true, id: issue.id })}

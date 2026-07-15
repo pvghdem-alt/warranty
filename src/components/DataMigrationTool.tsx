@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { collection, getDocs, doc, updateDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { Database, AlertTriangle, CheckCircle, RefreshCcw, Loader2 } from 'lucide-react';
 import { Issue } from '../types';
@@ -21,17 +21,27 @@ export default function DataMigrationTool() {
     try {
       // 1. Fetch all issues
       const snapshot = await getDocs(collection(db, 'issues'));
-      const issuesToUpdate: { id: string, photoUrls: string[] }[] = [];
+      const issuesToUpdate: { id: string, photoUrls: string[], completionPhotoUrls: string[] }[] = [];
 
       addLog(`成功讀取工單，共 ${snapshot.docs.length} 筆資料。開始檢查圖片。`);
 
       snapshot.forEach(doc => {
         const data = doc.data() as Issue;
+        let needsUpdate = false;
         if (data.photoUrls && Array.isArray(data.photoUrls)) {
-          const hasBase64 = data.photoUrls.some(url => url.startsWith('data:image'));
-          if (hasBase64) {
-             issuesToUpdate.push({ id: doc.id, photoUrls: data.photoUrls });
-          }
+          if (data.photoUrls.some(url => url.startsWith('data:image'))) needsUpdate = true;
+        }
+        const completionUrls = (data as any).completionPhotoUrls || [];
+        if (Array.isArray(completionUrls) && completionUrls.some(url => url.startsWith('data:image'))) {
+          needsUpdate = true;
+        }
+        
+        if (needsUpdate) {
+           issuesToUpdate.push({ 
+             id: doc.id, 
+             photoUrls: data.photoUrls || [],
+             completionPhotoUrls: completionUrls
+           });
         }
       });
 
@@ -48,25 +58,25 @@ export default function DataMigrationTool() {
 
       let count = 0;
       for (const issue of issuesToUpdate) {
-        const newUrls: string[] = [];
         let hasChanges = false;
         
-        for (let i = 0; i < issue.photoUrls.length; i++) {
-          const url = issue.photoUrls[i];
-          if (url.startsWith('data:image')) {
-            addLog(`正在上傳工單 ${issue.id} 的第 ${i+1} 張圖片...`);
-            
+        const uploadImages = async (urls: string[], prefix: string) => {
+          const newUrls: string[] = [];
+          for (let i = 0; i < urls.length; i++) {
+            const url = urls[i];
+            if (url.startsWith('data:image')) {
+              addLog(`正在上傳工單 ${issue.id} 的 ${prefix} 第 ${i+1} 張圖片...`);
+              
               let resultUrl = '';
               let uploadSuccess = false;
 
-              // 優先使用後端 Proxy API 的上傳端點，不受瀏覽器 CORS 限制
               try {
                 const response = await fetch('/api/drive/upload', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({
                     base64: url,
-                    fileName: `migration_${issue.id}_${i}.png`,
+                    fileName: `migration_${issue.id}_${prefix}_${i}.png`,
                     mimeType: 'image/jpeg',
                     projectName: '歷史工單遷移',
                     vendorCompany: '複查與歷史資料',
@@ -95,7 +105,7 @@ export default function DataMigrationTool() {
                   headers: { 'Content-Type': 'text/plain' },
                   body: JSON.stringify({
                     base64: url,
-                    fileName: `migration_${issue.id}_${i}.png`,
+                    fileName: `migration_${issue.id}_${prefix}_${i}.png`,
                     mimeType: 'image/jpeg' 
                   })
                 });
@@ -112,7 +122,6 @@ export default function DataMigrationTool() {
               }
 
               if (uploadSuccess && resultUrl) {
-                // 將 Google Drive 分享連結轉換為圖片直連連結 (直接顯示用)
                 let directUrl = resultUrl;
                 if (directUrl.includes('drive.google.com')) {
                   const idMatch = directUrl.match(/[-\w]{25,}/);
@@ -125,17 +134,24 @@ export default function DataMigrationTool() {
                 addLog(`✓ 成功上傳：轉換為 ${directUrl.substring(0, 30)}...`);
               } else {
                 addLog(`× 上傳失敗，保留原始 Base64`);
-                newUrls.push(url); // keep original if failed
+                newUrls.push(url);
               }
-
-          } else {
-            // Already a proper URL
-            newUrls.push(url);
+            } else {
+              newUrls.push(url);
+            }
           }
-        }
+          return newUrls;
+        };
+
+        const newPhotoUrls = await uploadImages(issue.photoUrls || [], '損壞');
+        const newCompletionPhotoUrls = await uploadImages(issue.completionPhotoUrls || [], '完工');
 
         if (hasChanges) {
-           await updateDoc(doc(db, 'issues', issue.id), { photoUrls: newUrls });
+           await updateDoc(doc(db, 'issues', issue.id), { 
+             photoUrls: newPhotoUrls,
+             completionPhotoUrls: newCompletionPhotoUrls,
+             updatedAt: serverTimestamp()
+           });
            addLog(`✓✓ 成功更新工單資料 (ID: ${issue.id})`);
         }
         

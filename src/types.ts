@@ -19,3 +19,19 @@ export interface ROCDate {
   month: number;
   day: number;
 }
+
+export interface Issue {
+  id: string;
+  warrantyId: string;
+  vendorCompany: string;
+  issueName: string;
+  status: '未處理' | '維修中' | '待料中' | '待確認' | '已完成';
+  createdAt?: any;
+  updatedAt?: any;
+  vendorReply?: string;
+  estRepairTime?: string;
+  hasUnreadReply?: boolean;
+  returnReason?: string;
+  photoUrls?: string[];
+  completionPhotoUrls?: string[];
+}

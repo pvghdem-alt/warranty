@@ -4,7 +4,10 @@ import {
   query, 
   orderBy, 
   deleteDoc, 
-  doc 
+  doc,
+  getDocs,
+  where,
+  getDoc
 } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
 import { db, OperationType, handleFirestoreError, parseFirestoreErrorToUserMsg } from '../lib/firebase';
@@ -22,13 +25,15 @@ import {
   Building2,
   Wrench,
   ExternalLink,
-  Bell
+  Bell,
+  FileText
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import ProjectIssuesModal from './ProjectIssuesModal';
 import ConfirmModal from './ConfirmModal';
-
 import ProjectNotifyModal from './ProjectNotifyModal';
+import { downloadATX, VendorInfo, IssueInfo } from '../lib/atxGenerator';
+
 
 export interface Issue {
   id?: string;
@@ -89,6 +94,63 @@ export default function WarrantyList({ onEdit }: WarrantyListProps) {
     w.vendor.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (w.issueRemark || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const handleDownloadProjectATX = async (warranty: Warranty) => {
+    try {
+      if (!warranty.id) return;
+
+      const vendorNames = warranty.vendor.split(/[、,，]/).map(v => v.trim()).filter(Boolean);
+      const vendorsInfo: VendorInfo[] = [];
+
+      for (const vName of vendorNames) {
+        try {
+          const vDoc = await getDoc(doc(db, 'vendorSettings', vName));
+          const vData = vDoc.data();
+          vendorsInfo.push({
+            company: vName,
+            address: vData?.address || '',
+            zipCode: vData?.zipCode || ''
+          });
+        } catch(e) {
+          vendorsInfo.push({ company: vName, address: '', zipCode: '' });
+        }
+      }
+
+      const issuesQuery = query(collection(db, 'issues'), where('warrantyId', '==', warranty.id));
+      const issuesSnapshot = await getDocs(issuesQuery);
+      
+      const issues = [];
+      issuesSnapshot.forEach(docSnap => {
+        const data = docSnap.data();
+        if (data.status === '已完成') return;
+        let notifyDate = '未知';
+        let waitDays: string | number = '未知';
+        if (data.createdAt) {
+          const date = data.createdAt.toDate ? data.createdAt.toDate() : new Date();
+          const rocYear = date.getFullYear() - 1911;
+          notifyDate = `${rocYear}年${date.getMonth() + 1}月${date.getDate()}日`;
+          waitDays = Math.floor((Date.now() - date.getTime()) / (1000 * 60 * 60 * 24));
+        }
+        
+        issues.push({
+          vendorCompany: data.vendorCompany,
+          name: data.issueName,
+          notifyDate,
+          waitDays
+        });
+      });
+
+      downloadATX({
+        projectName: warranty.projectName,
+        vendors: vendorsInfo.length > 0 ? vendorsInfo : [{ company: warranty.vendor, address: '', zipCode: '' }],
+        issues: issues.length > 0 ? issues : [{ name: '尚未登錄缺失細項', notifyDate: '未知', waitDays: '未知' }]
+      });
+
+    } catch (error) {
+      console.error(error);
+      alert('產生函稿時發生錯誤');
+    }
+  };
 
   if (loading) {
     return (
@@ -273,7 +335,16 @@ export default function WarrantyList({ onEdit }: WarrantyListProps) {
                             <span className="md:hidden text-xs">催修</span>
                           </button>
                           <button
+                            onClick={() => handleDownloadProjectATX(w)}
+                            className="flex-1 md:flex-none p-2 text-slate-400 hover:text-emerald-600 bg-slate-50 md:bg-transparent hover:bg-emerald-50 rounded-lg transition-all flex justify-center items-center gap-1"
+                            title="下載專案催告函 (ATX)"
+                          >
+                            <FileText className="w-4 h-4" />
+                            <span className="md:hidden text-xs">發文</span>
+                          </button>
+                          <button
                             onClick={() => onEdit(w)}
+
                             className="flex-1 md:flex-none p-2 text-slate-400 hover:text-blue-600 bg-slate-50 md:bg-transparent hover:bg-blue-50 rounded-lg transition-all flex justify-center items-center gap-1"
                             title="修改"
                           >

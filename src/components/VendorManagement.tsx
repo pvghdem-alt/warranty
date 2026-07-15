@@ -8,6 +8,8 @@ import DataMigrationTool from './DataMigrationTool';
 interface VendorData {
   companyName: string;
   lineUserId: string;
+  address?: string;
+  zipCode?: string;
 }
 
 export default function VendorManagement() {
@@ -18,7 +20,7 @@ export default function VendorManagement() {
   const [recentUsers, setRecentUsers] = useState<{userId: string; timestamp: number; message: string; displayName?: string}[]>([]);
   const [showRecent, setShowRecent] = useState<string | null>(null); // current editing vendor company
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editValue, setEditValue] = useState('');
+  const [editForm, setEditForm] = useState({ lineUserId: '', address: '', zipCode: '' });
 
   useEffect(() => {
     const fetchVendors = async () => {
@@ -33,15 +35,21 @@ export default function VendorManagement() {
 
         // Also fetch from vendorSettings in case there are vendors with settings but no active warranty
         const sSnap = await getDocs(collection(db, 'vendorSettings'));
-        const vendorMap: Record<string, string> = {};
+        const vendorMap: Record<string, { lineUserId: string, address?: string, zipCode?: string }> = {};
         sSnap.forEach(d => {
-          vendorMap[d.id] = d.data().lineUserId || '';
+          vendorMap[d.id] = {
+            lineUserId: d.data().lineUserId || '',
+            address: d.data().address || '',
+            zipCode: d.data().zipCode || ''
+          };
           uniqueVendors.add(d.id);
         });
 
         const vList: VendorData[] = Array.from(uniqueVendors).map(name => ({
           companyName: name,
-          lineUserId: vendorMap[name] || ''
+          lineUserId: vendorMap[name]?.lineUserId || '',
+          address: vendorMap[name]?.address || '',
+          zipCode: vendorMap[name]?.zipCode || ''
         }));
         
         vList.sort((a, b) => a.companyName.localeCompare(b.companyName));
@@ -79,17 +87,24 @@ export default function VendorManagement() {
 
   const handleSaveLineId = async (companyName: string) => {
     try {
-      if (!editValue) {
-        // Prevent clearing maybe, or allow clear?
-      }
-      await setDoc(doc(db, 'vendorSettings', companyName), { lineUserId: editValue }, { merge: true });
-      setVendors(prev => prev.map(v => v.companyName === companyName ? { ...v, lineUserId: editValue } : v));
+      await setDoc(doc(db, 'vendorSettings', companyName), { 
+        lineUserId: editForm.lineUserId,
+        address: editForm.address,
+        zipCode: editForm.zipCode
+      }, { merge: true });
+      
+      setVendors(prev => prev.map(v => v.companyName === companyName ? { 
+        ...v, 
+        lineUserId: editForm.lineUserId,
+        address: editForm.address,
+        zipCode: editForm.zipCode
+      } : v));
       setEditingId(null);
       setShowRecent(null);
       
       // Sync local storage as well to keep consistent with LineNotifyModal fallback
       const map = JSON.parse(localStorage.getItem('vendor_line_ids') || '{}');
-      map[companyName] = editValue;
+      map[companyName] = editForm.lineUserId;
       localStorage.setItem('vendor_line_ids', JSON.stringify(map));
       
     } catch(e) {
@@ -123,13 +138,14 @@ export default function VendorManagement() {
             <tr className="block md:table-row">
               <th className="px-6 py-4 block md:table-cell">廠商名稱</th>
               <th className="px-6 py-4 block md:table-cell">LINE User ID</th>
+              <th className="px-6 py-4 block md:table-cell">地址</th>
               <th className="px-6 py-4 text-right block md:table-cell">操作</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 block md:table-row-group">
             {vendors.length === 0 ? (
               <tr className="block md:table-row">
-                <td colSpan={3} className="px-6 py-8 text-center text-slate-400 block md:table-cell">尚無廠商資料</td>
+                <td colSpan={4} className="px-6 py-8 text-center text-slate-400 block md:table-cell">尚無廠商資料</td>
               </tr>
             ) : (
               vendors.map((vendor, idx) => {
@@ -151,6 +167,16 @@ export default function VendorManagement() {
                           <span className="text-slate-400 italic text-xs">尚未設定</span>
                         )}
                       </td>
+                      <td className="flex justify-between items-center md:table-cell px-0 py-2 md:px-6 md:py-4 block md:table-cell">
+                        <span className="md:hidden text-xs text-slate-500 font-bold">地址</span>
+                        {vendor.address ? (
+                          <span className="text-xs text-slate-600">
+                            {vendor.zipCode ? `${vendor.zipCode} ` : ''}{vendor.address}
+                          </span>
+                        ) : (
+                          <span className="text-slate-400 italic text-xs">尚未設定</span>
+                        )}
+                      </td>
                       <td className="flex justify-end block md:table-cell px-0 pt-2 md:px-6 md:py-4 text-right mt-2 md:mt-0">
                         <button
                           onClick={() => {
@@ -159,7 +185,11 @@ export default function VendorManagement() {
                               setShowRecent(null);
                             } else {
                               setEditingId(vendor.companyName);
-                              setEditValue(vendor.lineUserId);
+                              setEditForm({
+                                lineUserId: vendor.lineUserId || '',
+                                address: vendor.address || '',
+                                zipCode: vendor.zipCode || ''
+                              });
                               setShowRecent(null);
                             }
                           }}
@@ -210,7 +240,7 @@ export default function VendorManagement() {
                                         {recentUsers.map((u, i) => (
                                           <div 
                                             key={i} 
-                                            onClick={() => { setEditValue(u.userId); setShowRecent(null); }}
+                                            onClick={() => { setEditForm({ ...editForm, lineUserId: u.userId }); setShowRecent(null); }}
                                             className="bg-slate-50 p-3 rounded-lg border border-slate-200 cursor-pointer hover:border-green-500 hover:bg-green-50 hover:shadow-sm transition-all flex justify-between items-center group"
                                           >
                                             <div className="overflow-hidden pr-4">
@@ -227,22 +257,51 @@ export default function VendorManagement() {
                                   </div>
                                 )}
                                 
-                                <div className="flex gap-2">
-                                  <input
-                                    type="text"
-                                    value={editValue}
-                                    onChange={e => setEditValue(e.target.value)}
-                                    placeholder="以 U 開頭的 33 碼字串 (如 U123...)"
-                                    className="flex-1 px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all font-mono text-sm"
-                                  />
-                                  <button
-                                    onClick={() => handleSaveLineId(vendor.companyName)}
-                                    className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition-all shadow-md shadow-blue-500/20 flex items-center gap-2"
-                                  >
-                                    <Save className="w-4 h-4" /> 儲存 ID
-                                  </button>
+                                <div className="space-y-3">
+                                  <div>
+                                    <label className="text-xs font-bold text-slate-500 block mb-1">LINE User ID</label>
+                                    <input
+                                      type="text"
+                                      value={editForm.lineUserId}
+                                      onChange={e => setEditForm({...editForm, lineUserId: e.target.value})}
+                                      placeholder="以 U 開頭的 33 碼字串 (如 U123...)"
+                                      className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all font-mono text-sm"
+                                    />
+                                    <p className="text-[10px] text-slate-400 mt-1">注意：請確定填寫正確的 User ID 格式，否則可能會無法成功傳送通知。</p>
+                                  </div>
+                                  
+                                  <div className="flex gap-3">
+                                    <div className="w-1/4">
+                                      <label className="text-xs font-bold text-slate-500 block mb-1">郵遞區號</label>
+                                      <input
+                                        type="text"
+                                        value={editForm.zipCode}
+                                        onChange={e => setEditForm({...editForm, zipCode: e.target.value})}
+                                        placeholder="如 100"
+                                        className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm"
+                                      />
+                                    </div>
+                                    <div className="flex-1">
+                                      <label className="text-xs font-bold text-slate-500 block mb-1">聯絡地址</label>
+                                      <input
+                                        type="text"
+                                        value={editForm.address}
+                                        onChange={e => setEditForm({...editForm, address: e.target.value})}
+                                        placeholder="如 台北市中正區重慶南路一段122號"
+                                        className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm"
+                                      />
+                                    </div>
+                                  </div>
+                                  
+                                  <div className="flex justify-end pt-2">
+                                    <button
+                                      onClick={() => handleSaveLineId(vendor.companyName)}
+                                      className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition-all shadow-md shadow-blue-500/20 flex items-center gap-2"
+                                    >
+                                      <Save className="w-4 h-4" /> 儲存設定
+                                    </button>
+                                  </div>
                                 </div>
-                                <p className="text-[10px] text-slate-400">注意：請確定填寫正確的 User ID 格式，否則可能會無法成功傳送通知。</p>
                                 
                               </div>
                             </motion.div>
