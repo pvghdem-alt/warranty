@@ -56,6 +56,7 @@ export default function WarrantyList({ onEdit }: WarrantyListProps) {
   const [selectedProjectForIssues, setSelectedProjectForIssues] = useState<{id: string, name: string, vendor: string} | null>(null);
   const [selectedProjectForNotify, setSelectedProjectForNotify] = useState<{id: string, name: string} | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; id: string | null }>({ isOpen: false, id: null });
+  const [selectedWarrantyScope, setSelectedWarrantyScope] = useState<{name: string, scope: string} | null>(null);
 
   useEffect(() => {
     setLoading(true);
@@ -174,6 +175,40 @@ export default function WarrantyList({ onEdit }: WarrantyListProps) {
       )}
 
       <AnimatePresence>
+        {selectedWarrantyScope && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm" onClick={() => setSelectedWarrantyScope(null)}>
+            <div className="bg-white rounded-2xl w-full max-w-2xl shadow-xl overflow-hidden flex flex-col max-h-[85vh]" onClick={e => e.stopPropagation()}>
+              <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                <h3 className="font-bold text-slate-800 text-lg flex items-center gap-2">
+                  <span className="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center">
+                    <FileText className="w-4 h-4" />
+                  </span>
+                  {selectedWarrantyScope.name} - 保固範圍
+                </h3>
+                <button 
+                  onClick={() => setSelectedWarrantyScope(null)}
+                  className="text-slate-400 hover:text-slate-600 p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                >
+                  ✕
+                </button>
+              </div>
+              <div className="p-6 overflow-y-auto">
+                <div className="whitespace-pre-wrap text-slate-700 text-sm leading-relaxed">
+                  {selectedWarrantyScope.scope}
+                </div>
+              </div>
+              <div className="p-4 border-t border-slate-100 flex justify-end bg-slate-50/50">
+                <button
+                  onClick={() => setSelectedWarrantyScope(null)}
+                  className="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition-colors font-medium text-sm"
+                >
+                  關閉
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {selectedProjectForIssues && (
           <ProjectIssuesModal
             warrantyId={selectedProjectForIssues.id}
@@ -311,8 +346,16 @@ export default function WarrantyList({ onEdit }: WarrantyListProps) {
                           {w.issueRemark || '無備註'}
                         </div>
                         {w.warrantyScope && (
-                          <div className="mt-2 text-[10px] bg-indigo-50 text-indigo-700 px-2 py-1 rounded border border-indigo-100 line-clamp-2 md:line-clamp-3">
-                            <span className="font-bold">保固範圍：</span>{w.warrantyScope}
+                          <div 
+                            onClick={() => setSelectedWarrantyScope({ name: w.projectName, scope: w.warrantyScope || '' })}
+                            className="mt-2 text-[10px] bg-indigo-50 text-indigo-700 hover:bg-indigo-100 px-2 py-1.5 rounded border border-indigo-100 cursor-pointer transition-colors relative group"
+                          >
+                            <div className="line-clamp-2 md:line-clamp-3">
+                              <span className="font-bold">保固範圍：</span>{w.warrantyScope}
+                            </div>
+                            <div className="absolute top-1 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <ExternalLink className="w-3 h-3" />
+                            </div>
                           </div>
                         )}
                       </td>
