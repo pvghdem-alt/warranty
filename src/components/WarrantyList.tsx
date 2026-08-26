@@ -26,10 +26,12 @@ import {
   Wrench,
   ExternalLink,
   Bell,
-  FileText
+  FileText,
+  Map
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import ProjectIssuesModal from './ProjectIssuesModal';
+import FloorPlanManager from './FloorPlanManager';
 import ConfirmModal from './ConfirmModal';
 import ProjectNotifyModal from './ProjectNotifyModal';
 import { downloadATX, VendorInfo, IssueInfo } from '../lib/atxGenerator';
@@ -55,6 +57,7 @@ export default function WarrantyList({ onEdit }: WarrantyListProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedProjectForIssues, setSelectedProjectForIssues] = useState<{id: string, name: string, vendor: string} | null>(null);
   const [selectedProjectForNotify, setSelectedProjectForNotify] = useState<{id: string, name: string} | null>(null);
+  const [selectedProjectForFloorPlan, setSelectedProjectForFloorPlan] = useState<{id: string, name: string} | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; id: string | null }>({ isOpen: false, id: null });
   const [selectedWarrantyScope, setSelectedWarrantyScope] = useState<{name: string, scope: string} | null>(null);
 
@@ -217,6 +220,14 @@ export default function WarrantyList({ onEdit }: WarrantyListProps) {
             onClose={() => setSelectedProjectForIssues(null)}
           />
         )}
+
+        {selectedProjectForFloorPlan && (
+          <FloorPlanManager
+            warrantyId={selectedProjectForFloorPlan.id}
+            projectName={selectedProjectForFloorPlan.name}
+            onClose={() => setSelectedProjectForFloorPlan(null)}
+          />
+        )}
         {selectedProjectForNotify && (
           <ProjectNotifyModal
             isOpen={true}
@@ -360,10 +371,18 @@ export default function WarrantyList({ onEdit }: WarrantyListProps) {
                         )}
                       </td>
                       <td className="block md:table-cell p-0 md:p-4 mt-4 md:mt-0 pt-3 md:pt-5 border-t border-slate-100 md:border-none align-top">
-                        <div className="flex justify-end md:justify-center items-center gap-2 md:opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="flex justify-end md:justify-center items-center gap-1.5">
+                          <button
+                            onClick={() => w.id && setSelectedProjectForFloorPlan({ id: w.id, name: w.projectName })}
+                            className="flex-1 md:flex-none p-2 text-slate-500 hover:text-sky-600 bg-slate-50 md:bg-transparent hover:bg-sky-50 rounded-lg transition-all flex justify-center items-center gap-1"
+                            title="保固範圍圖面"
+                          >
+                            <Map className="w-4 h-4" />
+                            <span className="md:hidden text-xs">圖面</span>
+                          </button>
                           <button
                             onClick={() => w.id && setSelectedProjectForIssues({ id: w.id, name: w.projectName, vendor: w.vendor })}
-                            className="flex-1 md:flex-none p-2 text-slate-400 hover:text-indigo-600 bg-slate-50 md:bg-transparent hover:bg-indigo-50 rounded-lg transition-all flex justify-center items-center gap-1"
+                            className="flex-1 md:flex-none p-2 text-slate-500 hover:text-indigo-600 bg-slate-50 md:bg-transparent hover:bg-indigo-50 rounded-lg transition-all flex justify-center items-center gap-1"
                             title="維修管理"
                           >
                             <Wrench className="w-4 h-4" />
@@ -371,7 +390,7 @@ export default function WarrantyList({ onEdit }: WarrantyListProps) {
                           </button>
                           <button
                             onClick={() => w.id && setSelectedProjectForNotify({ id: w.id, name: w.projectName })}
-                            className="flex-1 md:flex-none p-2 text-slate-400 hover:text-orange-600 bg-slate-50 md:bg-transparent hover:bg-orange-50 rounded-lg transition-all flex justify-center items-center gap-1"
+                            className="flex-1 md:flex-none p-2 text-slate-500 hover:text-orange-600 bg-slate-50 md:bg-transparent hover:bg-orange-50 rounded-lg transition-all flex justify-center items-center gap-1"
                             title="寄發進度通知"
                           >
                             <Bell className="w-4 h-4" />
@@ -379,7 +398,7 @@ export default function WarrantyList({ onEdit }: WarrantyListProps) {
                           </button>
                           <button
                             onClick={() => handleDownloadProjectATX(w)}
-                            className="flex-1 md:flex-none p-2 text-slate-400 hover:text-emerald-600 bg-slate-50 md:bg-transparent hover:bg-emerald-50 rounded-lg transition-all flex justify-center items-center gap-1"
+                            className="flex-1 md:flex-none p-2 text-slate-500 hover:text-emerald-600 bg-slate-50 md:bg-transparent hover:bg-emerald-50 rounded-lg transition-all flex justify-center items-center gap-1"
                             title="下載專案催告函 (ATX)"
                           >
                             <FileText className="w-4 h-4" />
@@ -387,8 +406,7 @@ export default function WarrantyList({ onEdit }: WarrantyListProps) {
                           </button>
                           <button
                             onClick={() => onEdit(w)}
-
-                            className="flex-1 md:flex-none p-2 text-slate-400 hover:text-blue-600 bg-slate-50 md:bg-transparent hover:bg-blue-50 rounded-lg transition-all flex justify-center items-center gap-1"
+                            className="flex-1 md:flex-none p-2 text-slate-500 hover:text-blue-600 bg-slate-50 md:bg-transparent hover:bg-blue-50 rounded-lg transition-all flex justify-center items-center gap-1"
                             title="修改"
                           >
                             <Edit3 className="w-4 h-4" />
@@ -396,7 +414,7 @@ export default function WarrantyList({ onEdit }: WarrantyListProps) {
                           </button>
                           <button
                             onClick={() => w.id && setDeleteConfirm({ isOpen: true, id: w.id })}
-                            className="flex-1 md:flex-none p-2 text-slate-400 hover:text-red-600 bg-slate-50 md:bg-transparent hover:bg-red-50 rounded-lg transition-all flex justify-center items-center gap-1"
+                            className="flex-1 md:flex-none p-2 text-slate-500 hover:text-red-600 bg-slate-50 md:bg-transparent hover:bg-red-50 rounded-lg transition-all flex justify-center items-center gap-1"
                             title="刪除"
                           >
                             <Trash2 className="w-4 h-4" />

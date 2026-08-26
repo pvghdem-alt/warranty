@@ -35,3 +35,23 @@ export interface Issue {
   photoUrls?: string[];
   completionPhotoUrls?: string[];
 }
+
+export interface FloorPlan {
+  id: string;
+  warrantyId: string;
+  name: string;
+  imageUrl: string;
+  createdAt?: any;
+}
+
+export interface FloorPlanPin {
+  id: string;
+  planId: string;
+  warrantyId: string;
+  x: number;
+  y: number;
+  title: string;
+  description: string;
+  photoUrl?: string;
+  createdAt?: any;
+}
