@@ -112,50 +112,6 @@ export default function ProjectIssuesModal({ warrantyId, projectName, vendorName
     setShowAddForm(false);
   };
 
-  const checkAndNotifyVendor = async (vendor: string, newIssueName: string) => {
-    try {
-      const docRef = doc(db, 'vendorSettings', vendor);
-      const docSnap = await getDoc(docRef);
-      if (!docSnap.exists()) return;
-      
-      const lineUserId = docSnap.data().lineUserId;
-      if (!lineUserId) return;
-
-      const q = query(collection(db, 'issues'), where('vendorCompany', '==', vendor));
-      const issueSnaps = await getDocs(q);
-      
-      let unfinishedIssues: Issue[] = [];
-      issueSnaps.forEach(d => {
-        const data = d.data() as Issue;
-        if (data.status !== '已完成') {
-          unfinishedIssues.push({...data, id: d.id, createdAt: data.createdAt?.toDate?.() || new Date()});
-        }
-      });
-
-      const today = new Date();
-      const listStr = unfinishedIssues.map((issue, idx) => {
-         const d = issue.createdAt ? new Date(issue.createdAt) : today;
-         const days = Math.floor((today.getTime() - d.getTime()) / (1000 * 3600 * 24));
-         return `${idx+1}. 【${issue.issueName}】 - 狀態: ${issue.status} (已等待 ${days} 天)`;
-      }).join('\n');
-
-      const baseUrl = window.location.origin + window.location.pathname;
-      const vendorDashboardLink = `${baseUrl}?vendor=${vendor}`;
-
-      const messageText = `✨ 【新增維修工單】\n專案：${projectName}\n項目：${newIssueName}\n\n⚠️ 目前您共有 ${unfinishedIssues.length} 張工單尚未處理：\n${listStr}\n\n廠商您好，這是您的專屬維修管理列表頁面，請點擊連結查看並更新所有工單狀態：\n${vendorDashboardLink}`;
-
-      fetch('/api/line/push', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          to: lineUserId,
-          messages: [{ type: 'text', text: messageText }]
-        })
-      });
-    } catch (err) {
-      console.error("Auto notify error", err);
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -183,7 +139,12 @@ export default function ProjectIssuesModal({ warrantyId, projectName, vendorName
         });
         
         if (vendorCompany) {
-          setTimeout(() => checkAndNotifyVendor(vendorCompany, issueName), 1000);
+          setSelectedIssue({
+            issueName: issueData.issueName,
+            vendorCompany: issueData.vendorCompany,
+            status: issueData.status,
+            warrantyId: issueData.warrantyId,
+          } as Issue);
         }
       }
       resetForm();
