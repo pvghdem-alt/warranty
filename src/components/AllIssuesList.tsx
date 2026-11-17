@@ -246,9 +246,37 @@ export default function AllIssuesList() {
     setSelectedIssue(issue);
   };
 
-  const filteredIssues = issues.filter(i => {
-    if (activeTab === '未讀回覆' && !i.hasUnreadReply) return false;
-    if (activeTab !== 'all' && activeTab !== '未讀回覆' && i.status !== activeTab) return false;
+  const tabIssues = useMemo(() => {
+    return issues.filter(i => {
+      if (activeTab === '未讀回覆') return !!i.hasUnreadReply;
+      if (activeTab !== 'all') return i.status === activeTab;
+      return true;
+    });
+  }, [issues, activeTab]);
+
+  const projectOptions = useMemo(() => {
+    const counts: Record<string, number> = {};
+    tabIssues.forEach(i => {
+      if (i.warrantyId) {
+        counts[i.warrantyId] = (counts[i.warrantyId] || 0) + 1;
+      }
+    });
+    return Object.entries(counts)
+      .map(([id, count]) => ({
+        id,
+        name: projectsMap[id] || '未知專案',
+        count,
+      }))
+      .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name, 'zh-Hant'));
+  }, [tabIssues, projectsMap]);
+
+  useEffect(() => {
+    if (selectedProjectId !== 'all' && !projectOptions.some(p => p.id === selectedProjectId)) {
+      setSelectedProjectId('all');
+    }
+  }, [projectOptions, selectedProjectId]);
+
+  const filteredIssues = tabIssues.filter(i => {
     if (selectedProjectId !== 'all' && i.warrantyId !== selectedProjectId) return false;
     
     if (searchTerm) {
@@ -465,15 +493,15 @@ export default function AllIssuesList() {
             className="w-full pl-12 pr-4 py-4 bg-white border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-slate-500/5 focus:border-slate-500 transition-all shadow-sm"
           />
         </div>
-        <div className="w-full sm:w-64 relative">
+        <div className="w-full sm:w-72 relative">
           <select
             value={selectedProjectId}
             onChange={(e) => setSelectedProjectId(e.target.value)}
-            className="w-full h-full px-4 py-4 bg-white border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-slate-500/5 focus:border-slate-500 transition-all shadow-sm appearance-none text-lg text-slate-800 font-black"
+            className="w-full h-full pl-4 pr-10 py-4 bg-white border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-slate-500/5 focus:border-slate-500 transition-all shadow-sm appearance-none text-lg text-slate-800 font-black truncate"
           >
-            <option value="all">所有工程案</option>
-            {Object.entries(projectsMap).map(([id, name]) => (
-              <option key={id} value={id}>{name}</option>
+            <option value="all">所有工程案({tabIssues.length})</option>
+            {projectOptions.map(({ id, name, count }) => (
+              <option key={id} value={id}>{name}({count})</option>
             ))}
           </select>
           <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
