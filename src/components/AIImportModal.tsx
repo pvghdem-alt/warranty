@@ -53,9 +53,9 @@ export default function AIImportModal({ onClose, onSuccess }: AIImportModalProps
     try {
       const data = await analyzeWarrantyDocuments(files);
       setExtractedData(data);
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      setError('分析失敗，請檢查檔案格式或網路連線。');
+      setError(err?.message || '分析失敗，請檢查檔案格式或網路連線。');
     } finally {
       setIsAnalyzing(false);
     }

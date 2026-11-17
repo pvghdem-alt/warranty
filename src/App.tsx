@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { ShieldCheck, LayoutDashboard, Plus, Lock, Github, ExternalLink, Sparkles, Key, Bell, LogOut } from 'lucide-react';
+import { ShieldCheck, LayoutDashboard, Plus, Lock, Sparkles, LogOut } from 'lucide-react';
 import WarrantyForm from './components/WarrantyForm';
 import WarrantyList from './components/WarrantyList';
 import AllIssuesList from './components/AllIssuesList';
 import AIImportModal from './components/AIImportModal';
-import ApiKeyModal from './components/ApiKeyModal';
 import VendorDashboard from './components/VendorDashboard';
 import VendorManagement from './components/VendorManagement';
 import LoginPage from './components/LoginPage';
@@ -21,7 +20,6 @@ export default function App() {
   const [editingWarranty, setEditingWarranty] = useState<Warranty | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [showAIModal, setShowAIModal] = useState(false);
-  const [showApiKeyModal, setShowApiKeyModal] = useState(false);
   const [activeView, setActiveView] = useState<'warranties' | 'issues' | 'vendors'>('warranties');
   const [unreadIssuesCount, setUnreadIssuesCount] = useState(0);
 
@@ -102,9 +100,6 @@ export default function App() {
             onSuccess={() => setShowAIModal(false)}
           />
         )}
-        {showApiKeyModal && (
-          <ApiKeyModal onClose={() => setShowApiKeyModal(false)} />
-        )}
       </AnimatePresence>
 
       {/* 頂部導航 */}
@@ -169,16 +164,6 @@ export default function App() {
               <div className="hidden lg:flex items-center gap-1 px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-bold">
                 <Lock className="w-3 h-3" /> 已登入
               </div>
-
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => setShowApiKeyModal(true)}
-                className="bg-white border border-slate-200 text-slate-500 p-2 rounded-xl text-sm font-bold flex items-center justify-center transition-all hover:border-slate-300 w-9 h-9 sm:w-auto sm:h-auto sm:px-2"
-                title="設定 API 金鑰"
-              >
-                <Key className="w-4 h-4" />
-              </motion.button>
               
               <motion.button
                 whileHover={{ scale: 1.05 }}

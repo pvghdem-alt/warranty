@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { collection, onSnapshot, query, orderBy, getDocs, doc, updateDoc, deleteDoc, serverTimestamp, getDoc } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType, parseFirestoreErrorToUserMsg } from '../lib/firebase';
-import { Edit3, Trash2, Search, MessageCircle, AlertCircle, Clock, Construction, Wrench, BarChart2, ListTodo, ExternalLink, Building2 } from 'lucide-react';
+import { Edit3, Trash2, Search, MessageCircle, AlertCircle, Clock, Wrench, BarChart2, ListTodo, ExternalLink, Building2, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn, getDisplayUrl } from '../lib/utils';
 import ProjectIssuesModal from './ProjectIssuesModal'; // We can reuse the edit form logic, or just make an inline edit here.
@@ -25,6 +25,7 @@ interface Issue {
   warrantyId: string;
   hasUnreadReply?: boolean;
   returnReason?: string;
+  involvedVendors?: string[];
   photoUrls?: string[];
   completionPhotoUrls?: string[];
 }
@@ -50,11 +51,16 @@ export default function AllIssuesList() {
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editFormData, setEditFormData] = useState<any>({});
+  const [expandedIds, setExpandedIds] = useState<Record<string, boolean>>({});
   
   const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; id: string | null }>({ isOpen: false, id: null });
   const [returnTicketModal, setReturnTicketModal] = useState<{ isOpen: boolean; issue: Issue | null }>({ isOpen: false, issue: null });
   const [viewImageUrl, setViewImageUrl] = useState<string | null>(null);
+
+  const toggleExpand = (id: string) => {
+    setExpandedIds(prev => ({ ...prev, [id]: !prev[id] }));
+  };
 
   useEffect(() => {
     setLoading(true);
@@ -208,6 +214,7 @@ export default function AllIssuesList() {
     if (editingId === issue.id) {
       setEditingId(null);
     } else {
+      setExpandedIds(prev => ({ ...prev, [issue.id]: true }));
       setEditingId(issue.id);
       setEditFormData({
         status: issue.status,
@@ -475,253 +482,324 @@ export default function AllIssuesList() {
         </div>
       </div>
 
-      <div className="space-y-4">
+      {filteredIssues.length > 0 && (
+        <div className="flex items-center justify-between px-1 text-xs text-slate-500">
+          <span>共 {filteredIssues.length} 筆工單（點選任一項目展開詳情）</span>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                const all: Record<string, boolean> = {};
+                filteredIssues.forEach(i => { all[i.id] = true; });
+                setExpandedIds(prev => ({ ...prev, ...all }));
+              }}
+              className="px-2.5 py-1 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 font-semibold text-slate-600 transition-colors"
+            >
+              全部展開
+            </button>
+            <button
+              type="button"
+              onClick={() => setExpandedIds({})}
+              className="px-2.5 py-1 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 font-semibold text-slate-600 transition-colors"
+            >
+              全部收合
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div className="space-y-2.5">
         {filteredIssues.map(issue => {
           const isEditing = editingId === issue.id;
+          const isExpanded = !!expandedIds[issue.id] || isEditing;
           const projName = projectsMap[issue.warrantyId] || '未知專案';
           const waitDays = getWaitingDays(issue.createdAt);
           
           return (
-            <div key={issue.id} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-              <div className="flex justify-between items-start mb-4">
-                <div>
-                  <div className="flex flex-wrap items-center gap-2 mb-2">
-                    <span className={cn("px-2 py-0.5 text-xs font-bold rounded border", statusColors[issue.status])}>
-                      {issue.status}
+            <div key={issue.id} className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden transition-all">
+              {/* Compact Title Header (Click to Expand/Collapse) */}
+              <div
+                role="button"
+                tabIndex={0}
+                onClick={() => toggleExpand(issue.id)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    toggleExpand(issue.id);
+                  }
+                }}
+                className={cn(
+                  "flex items-center justify-between gap-3 px-4 py-3.5 cursor-pointer select-none transition-colors",
+                  isExpanded ? "bg-slate-50/70" : "hover:bg-slate-50"
+                )}
+              >
+                <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                  <span className={cn("px-2 py-0.5 text-xs font-bold rounded border shrink-0", statusColors[issue.status])}>
+                    {issue.status}
+                  </span>
+                  {issue.hasUnreadReply && (
+                    <span className="px-2 py-0.5 text-xs font-bold rounded border bg-red-100 text-red-700 border-red-200 animate-pulse shrink-0">
+                      新回覆
                     </span>
-                    {issue.hasUnreadReply && (
-                      <span className="flex items-center gap-1">
-                        <span className="px-2 py-0.5 text-xs font-bold rounded border bg-red-100 text-red-700 border-red-200 animate-pulse">
-                          新回覆
-                        </span>
-                        <button
-                          onClick={() => markAsRead(issue.id)}
-                          className="px-2 py-0.5 text-xs font-bold rounded border bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200 transition-colors shadow-sm"
-                        >
-                          標記已讀
-                        </button>
-                      </span>
-                    )}
-                    <span className="text-base md:text-lg font-black text-blue-800 bg-blue-100 px-3 py-1 rounded shadow-sm border border-blue-200">
-                      {projName}
-                    </span>
-                    {issue.status !== '已完成' && waitDays > 0 && (
-                      <span className="text-xs font-bold text-red-500">
-                        待機 {waitDays} 天
-                      </span>
-                    )}
-                  </div>
-                  <h3 className="font-bold text-xl text-slate-800 mt-3 flex items-center gap-2">
+                  )}
+                  <h3 className="font-bold text-base sm:text-lg text-slate-800 leading-snug">
                     {issue.issueName}
-                    {issue.vendorCompany && (
-                      <div className="flex flex-wrap items-center gap-1.5 ml-2">
-                        {issue.vendorCompany.split(/[,、;]+/).map(v => v.trim()).filter(Boolean).map((v, i) => (
-                          <a 
-                            key={i}
-                            href={`/?vendor=${encodeURIComponent(v)}&project=${encodeURIComponent(issue.warrantyId)}`} 
-                            target="_blank" 
-                            rel="noreferrer"
-                            className="bg-slate-100 text-slate-500 px-2 py-1 rounded-md text-[10px] hover:bg-blue-100 hover:text-blue-700 transition-colors inline-flex items-center gap-1 leading-none shadow-sm"
-                            onClick={(e) => {
-                              const url = `${window.location.origin}/?vendor=${v}&project=${issue.warrantyId}`;
-                              navigator.clipboard.writeText(url).catch(() => {});
-                            }}
-                          >
-                            <Building2 className="w-3 h-3" />
-                            {v}
-                          </a>
-                        ))}
-                      </div>
-                    )}
                   </h3>
-                  {issue.returnReason && (
-                    <p className="text-sm font-bold text-red-600 mt-2 bg-red-50 p-2 rounded-lg border border-red-100">
-                      退件原因：{issue.returnReason}
-                    </p>
-                  )}
-                  <p className="text-sm text-slate-500 mt-2 flex items-center gap-1.5">
-                    <Clock className="w-4 h-4" /> 登載日期：{issue.createdAt?.toDate?.().toLocaleDateString('zh-TW')}
-                  </p>
                 </div>
-                
-                <div className="flex gap-2">
-                  {issue.status === '待確認' && (
-                    <>
-                      <button
-                        onClick={() => handleConfirmTicket(issue)}
-                        className="px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white text-xs font-bold rounded-lg transition-colors shadow-sm"
-                      >
-                        已確認
-                      </button>
-                      <button
-                        onClick={() => setReturnTicketModal({ isOpen: true, issue: issue })}
-                        className="px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white text-xs font-bold rounded-lg transition-colors shadow-sm"
-                      >
-                        退回工單
-                      </button>
-                    </>
+                <ChevronDown
+                  className={cn(
+                    "w-5 h-5 text-slate-400 shrink-0 transition-transform duration-200",
+                    isExpanded && "rotate-180 text-blue-600"
                   )}
-                  <button
-                    onClick={() => notifyLine(issue)}
-                    className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors border border-transparent hover:border-green-100"
-                    title="LINE 通知"
-                  >
-                    <MessageCircle className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => handleEdit(issue)}
-                    className={cn(
-                      "p-2 rounded-lg transition-colors border",
-                      isEditing 
-                        ? "bg-blue-50 text-blue-600 border-blue-200" 
-                        : "text-slate-400 hover:text-blue-600 hover:bg-blue-50 border-transparent hover:border-blue-100"
-                    )}
-                    title="編輯回覆"
-                  >
-                    <Edit3 className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => handleDownloadATX(issue)}
-                    className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors border border-transparent hover:border-indigo-100"
-                    title="下載催告函 (ATX)"
-                  >
-                    <FileText className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => setDeleteConfirm({ isOpen: true, id: issue.id })}
-                    className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors border border-transparent hover:border-red-100"
-                    title="刪除"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
+                />
               </div>
 
-              {isEditing ? (
-                <div className="bg-slate-50 p-4 rounded-xl space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-1">
-                      <label className="text-xs font-bold text-slate-500">處理狀態</label>
-                      <select
-                        value={editFormData.status}
-                        onChange={e => setEditFormData({...editFormData, status: e.target.value})}
-                        className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all bg-white"
-                      >
-                         <option value="未處理">未處理</option>
-                        <option value="維修中">維修中</option>
-                        <option value="待料中">待料中</option>
-                        <option value="待確認">待確認</option>
-                        <option value="已完成">已完成</option>
-                      </select>
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-xs font-bold text-slate-500">負責廠商</label>
-                      <input
-                        type="text"
-                        value={editFormData.vendorCompany}
-                        onChange={e => setEditFormData({...editFormData, vendorCompany: e.target.value})}
-                        className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
-                      />
-                    </div>
-                    <div className="space-y-1 md:col-span-2">
-                      <label className="text-xs font-bold text-slate-500">預計維修時間</label>
-                      <input
-                        type="date"
-                        value={editFormData.estRepairTime}
-                        onChange={e => setEditFormData({...editFormData, estRepairTime: e.target.value})}
-                        className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
-                      />
-                    </div>
-                    <div className="space-y-1 md:col-span-2">
-                      <label className="text-xs font-bold text-slate-500">廠商回覆</label>
-                      <textarea
-                        value={editFormData.vendorReply}
-                        onChange={e => setEditFormData({...editFormData, vendorReply: e.target.value})}
-                        className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all min-h-[80px]"
-                        placeholder="廠商回覆..."
-                      />
-                    </div>
-                    <div className="space-y-1 md:col-span-2">
-                      <label className="text-xs font-bold text-slate-500">相關照片上傳</label>
-                      <ImageUpload 
-                        photoUrls={editFormData.photoUrls} 
-                        onChange={urls => setEditFormData({...editFormData, photoUrls: urls})} 
-                        projectName={projectsMap[editFormData.warrantyId]}
-                        vendorCompany={editFormData.vendorCompany}
-                        issueName={editFormData.issueName}
-                      />
-                    </div>
-                    <div className="space-y-1 md:col-span-2">
-                      <label className="text-xs font-bold text-slate-500">完工照片上傳</label>
-                      <ImageUpload 
-                        photoUrls={editFormData.completionPhotoUrls} 
-                        onChange={urls => setEditFormData({...editFormData, completionPhotoUrls: urls})} 
-                        projectName={projectsMap[editFormData.warrantyId]}
-                        vendorCompany={editFormData.vendorCompany}
-                        issueName={editFormData.issueName}
-                      />
-                    </div>
-                  </div>
-                  <div className="flex justify-end gap-2 pt-2">
-                    <button
-                      onClick={() => setEditingId(null)}
-                      className="px-4 py-2 text-sm font-bold text-slate-500 hover:text-slate-700 bg-slate-200/50 hover:bg-slate-200 rounded-xl transition-all"
-                    >
-                      取消
-                    </button>
-                    <button
-                      onClick={() => handleUpdate(issue.id)}
-                      className="px-4 py-2 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-all shadow-md shadow-blue-500/20"
-                    >
-                      更新儲存
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm bg-slate-50/80 p-3 rounded-xl border border-slate-100">
-                  <div>
-                    <p className="text-[10px] font-bold text-slate-400 mb-1">負責廠商</p>
-                    <p className="text-slate-700 font-medium truncate">
-                      {issue.involvedVendors && issue.involvedVendors.length > 1 
-                        ? issue.involvedVendors.join('、')
-                        : (issue.vendorCompany || <span className="text-slate-400 italic">未指定</span>)}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-bold text-slate-400 mb-1">預計維修時間</p>
-                    <p className="text-slate-700 font-medium">{issue.estRepairTime || <span className="text-slate-400 italic">未定</span>}</p>
-                  </div>
-                  <div className="col-span-1 sm:col-span-3 border-t border-slate-200/60 pt-2 mt-1">
-                    <p className="text-[10px] font-bold text-slate-400 mb-1">廠商回覆</p>
-                    <p className="text-slate-700">{issue.vendorReply || <span className="text-slate-400 italic">暫無回覆</span>}</p>
-                  </div>
-                  
-                  {issue.photoUrls && issue.photoUrls.length > 0 && (
-                    <div className="col-span-1 sm:col-span-3 border-t border-slate-200/60 pt-2 mt-1">
-                      <p className="text-[10px] font-bold text-slate-400 mb-2">相關照片</p>
-                      <div className="flex flex-wrap gap-2">
-                        {issue.photoUrls.map((url, idx) => (
-                          <button key={`photo-${idx}`} type="button" onClick={() => setViewImageUrl(url)} className="block w-16 h-16 rounded-lg overflow-hidden border border-slate-200 hover:opacity-80 transition-opacity bg-black">
-                            <img src={getDisplayUrl(url)} alt="Issue" className="w-full h-full object-contain" />
+              {/* Expanded Details */}
+              <AnimatePresence initial={false}>
+                {isExpanded && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.18 }}
+                    className="overflow-hidden border-t border-slate-100"
+                  >
+                    <div className="p-5 space-y-4">
+                      <div className="flex flex-wrap justify-between items-start gap-3">
+                        <div className="space-y-2">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="text-sm md:text-base font-black text-blue-800 bg-blue-100 px-3 py-1 rounded shadow-sm border border-blue-200">
+                              {projName}
+                            </span>
+                            {issue.hasUnreadReply && (
+                              <button
+                                onClick={() => markAsRead(issue.id)}
+                                className="px-2.5 py-1 text-xs font-bold rounded border bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200 transition-colors shadow-sm"
+                              >
+                                標記已讀
+                              </button>
+                            )}
+                            {issue.status !== '已完成' && waitDays > 0 && (
+                              <span className="text-xs font-bold text-red-500">
+                                待機 {waitDays} 天
+                              </span>
+                            )}
+                          </div>
+
+                          {issue.vendorCompany && (
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              {issue.vendorCompany.split(/[,、;]+/).map(v => v.trim()).filter(Boolean).map((v, i) => (
+                                <a 
+                                  key={i}
+                                  href={`/?vendor=${encodeURIComponent(v)}&project=${encodeURIComponent(issue.warrantyId)}`} 
+                                  target="_blank" 
+                                  rel="noreferrer"
+                                  className="bg-slate-100 text-slate-600 px-2.5 py-1 rounded-md text-xs hover:bg-blue-100 hover:text-blue-700 transition-colors inline-flex items-center gap-1 leading-none shadow-sm"
+                                  onClick={() => {
+                                    const url = `${window.location.origin}/?vendor=${v}&project=${issue.warrantyId}`;
+                                    navigator.clipboard.writeText(url).catch(() => {});
+                                  }}
+                                >
+                                  <Building2 className="w-3 h-3" />
+                                  {v}
+                                </a>
+                              ))}
+                            </div>
+                          )}
+
+                          {issue.returnReason && (
+                            <p className="text-sm font-bold text-red-600 bg-red-50 p-2 rounded-lg border border-red-100">
+                              退件原因：{issue.returnReason}
+                            </p>
+                          )}
+
+                          <p className="text-sm text-slate-500 flex items-center gap-1.5">
+                            <Clock className="w-4 h-4" /> 登載日期：{issue.createdAt?.toDate?.().toLocaleDateString('zh-TW')}
+                          </p>
+                        </div>
+
+                        <div className="flex flex-wrap gap-2">
+                          {issue.status === '待確認' && (
+                            <>
+                              <button
+                                onClick={() => handleConfirmTicket(issue)}
+                                className="px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white text-xs font-bold rounded-lg transition-colors shadow-sm"
+                              >
+                                已確認
+                              </button>
+                              <button
+                                onClick={() => setReturnTicketModal({ isOpen: true, issue: issue })}
+                                className="px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white text-xs font-bold rounded-lg transition-colors shadow-sm"
+                              >
+                                退回工單
+                              </button>
+                            </>
+                          )}
+                          <button
+                            onClick={() => notifyLine(issue)}
+                            className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors border border-transparent hover:border-green-100"
+                            title="LINE 通知"
+                          >
+                            <MessageCircle className="w-4 h-4" />
                           </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  {(issue as any).completionPhotoUrls && (issue as any).completionPhotoUrls.length > 0 && (
-                    <div className="col-span-1 sm:col-span-3 border-t border-slate-200/60 pt-2 mt-1">
-                      <p className="text-[10px] font-bold text-emerald-500 mb-2">完工照片</p>
-                      <div className="flex flex-wrap gap-2">
-                        {(issue as any).completionPhotoUrls.map((url: string, idx: number) => (
-                          <button key={`comp-${idx}`} type="button" onClick={() => setViewImageUrl(url)} className="block w-16 h-16 rounded-lg overflow-hidden border border-emerald-200 hover:opacity-80 transition-opacity bg-black">
-                            <img src={getDisplayUrl(url)} alt="Completion" className="w-full h-full object-contain" />
+                          <button
+                            onClick={() => handleEdit(issue)}
+                            className={cn(
+                              "p-2 rounded-lg transition-colors border",
+                              isEditing 
+                                ? "bg-blue-50 text-blue-600 border-blue-200" 
+                                : "text-slate-400 hover:text-blue-600 hover:bg-blue-50 border-transparent hover:border-blue-100"
+                            )}
+                            title="編輯回覆"
+                          >
+                            <Edit3 className="w-4 h-4" />
                           </button>
-                        ))}
+                          <button
+                            onClick={() => handleDownloadATX(issue)}
+                            className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors border border-transparent hover:border-indigo-100"
+                            title="下載催告函 (ATX)"
+                          >
+                            <FileText className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => setDeleteConfirm({ isOpen: true, id: issue.id })}
+                            className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors border border-transparent hover:border-red-100"
+                            title="刪除"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </div>
+
+                      {isEditing ? (
+                        <div className="bg-slate-50 p-4 rounded-xl space-y-4">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-1">
+                              <label className="text-xs font-bold text-slate-500">處理狀態</label>
+                              <select
+                                value={editFormData.status}
+                                onChange={e => setEditFormData({...editFormData, status: e.target.value})}
+                                className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all bg-white"
+                              >
+                                <option value="未處理">未處理</option>
+                                <option value="維修中">維修中</option>
+                                <option value="待料中">待料中</option>
+                                <option value="待確認">待確認</option>
+                                <option value="已完成">已完成</option>
+                              </select>
+                            </div>
+                            <div className="space-y-1">
+                              <label className="text-xs font-bold text-slate-500">負責廠商</label>
+                              <input
+                                type="text"
+                                value={editFormData.vendorCompany}
+                                onChange={e => setEditFormData({...editFormData, vendorCompany: e.target.value})}
+                                className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                              />
+                            </div>
+                            <div className="space-y-1 md:col-span-2">
+                              <label className="text-xs font-bold text-slate-500">預計維修時間</label>
+                              <input
+                                type="date"
+                                value={editFormData.estRepairTime}
+                                onChange={e => setEditFormData({...editFormData, estRepairTime: e.target.value})}
+                                className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                              />
+                            </div>
+                            <div className="space-y-1 md:col-span-2">
+                              <label className="text-xs font-bold text-slate-500">廠商回覆</label>
+                              <textarea
+                                value={editFormData.vendorReply}
+                                onChange={e => setEditFormData({...editFormData, vendorReply: e.target.value})}
+                                className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all min-h-[80px]"
+                                placeholder="廠商回覆..."
+                              />
+                            </div>
+                            <div className="space-y-1 md:col-span-2">
+                              <label className="text-xs font-bold text-slate-500">相關照片上傳</label>
+                              <ImageUpload 
+                                photoUrls={editFormData.photoUrls} 
+                                onChange={urls => setEditFormData({...editFormData, photoUrls: urls})} 
+                                projectName={projectsMap[editFormData.warrantyId]}
+                                vendorCompany={editFormData.vendorCompany}
+                                issueName={editFormData.issueName}
+                              />
+                            </div>
+                            <div className="space-y-1 md:col-span-2">
+                              <label className="text-xs font-bold text-slate-500">完工照片上傳</label>
+                              <ImageUpload 
+                                photoUrls={editFormData.completionPhotoUrls} 
+                                onChange={urls => setEditFormData({...editFormData, completionPhotoUrls: urls})} 
+                                projectName={projectsMap[editFormData.warrantyId]}
+                                vendorCompany={editFormData.vendorCompany}
+                                issueName={editFormData.issueName}
+                              />
+                            </div>
+                          </div>
+                          <div className="flex justify-end gap-2 pt-2">
+                            <button
+                              onClick={() => setEditingId(null)}
+                              className="px-4 py-2 text-sm font-bold text-slate-500 hover:text-slate-700 bg-slate-200/50 hover:bg-slate-200 rounded-xl transition-all"
+                            >
+                              取消
+                            </button>
+                            <button
+                              onClick={() => handleUpdate(issue.id)}
+                              className="px-4 py-2 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-all shadow-md shadow-blue-500/20"
+                            >
+                              更新儲存
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm bg-slate-50/80 p-3 rounded-xl border border-slate-100">
+                          <div>
+                            <p className="text-[10px] font-bold text-slate-400 mb-1">負責廠商</p>
+                            <p className="text-slate-700 font-medium truncate">
+                              {issue.involvedVendors && issue.involvedVendors.length > 1 
+                                ? issue.involvedVendors.join('、')
+                                : (issue.vendorCompany || <span className="text-slate-400 italic">未指定</span>)}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-[10px] font-bold text-slate-400 mb-1">預計維修時間</p>
+                            <p className="text-slate-700 font-medium">{issue.estRepairTime || <span className="text-slate-400 italic">未定</span>}</p>
+                          </div>
+                          <div className="col-span-1 sm:col-span-3 border-t border-slate-200/60 pt-2 mt-1">
+                            <p className="text-[10px] font-bold text-slate-400 mb-1">廠商回覆</p>
+                            <p className="text-slate-700">{issue.vendorReply || <span className="text-slate-400 italic">暫無回覆</span>}</p>
+                          </div>
+                          
+                          {issue.photoUrls && issue.photoUrls.length > 0 && (
+                            <div className="col-span-1 sm:col-span-3 border-t border-slate-200/60 pt-2 mt-1">
+                              <p className="text-[10px] font-bold text-slate-400 mb-2">相關照片</p>
+                              <div className="flex flex-wrap gap-2">
+                                {issue.photoUrls.map((url, idx) => (
+                                  <button key={`photo-${idx}`} type="button" onClick={() => setViewImageUrl(url)} className="block w-16 h-16 rounded-lg overflow-hidden border border-slate-200 hover:opacity-80 transition-opacity bg-black">
+                                    <img src={getDisplayUrl(url)} alt="Issue" className="w-full h-full object-contain" />
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          {(issue as any).completionPhotoUrls && (issue as any).completionPhotoUrls.length > 0 && (
+                            <div className="col-span-1 sm:col-span-3 border-t border-slate-200/60 pt-2 mt-1">
+                              <p className="text-[10px] font-bold text-emerald-500 mb-2">完工照片</p>
+                              <div className="flex flex-wrap gap-2">
+                                {(issue as any).completionPhotoUrls.map((url: string, idx: number) => (
+                                  <button key={`comp-${idx}`} type="button" onClick={() => setViewImageUrl(url)} className="block w-16 h-16 rounded-lg overflow-hidden border border-emerald-200 hover:opacity-80 transition-opacity bg-black">
+                                    <img src={getDisplayUrl(url)} alt="Completion" className="w-full h-full object-contain" />
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-              )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           );
         })}

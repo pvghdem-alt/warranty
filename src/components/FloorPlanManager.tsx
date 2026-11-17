@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { collection, query, where, onSnapshot, addDoc, serverTimestamp, deleteDoc, doc, updateDoc } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { db, storage } from '../lib/firebase';
+import { collection, query, where, onSnapshot, addDoc, serverTimestamp, deleteDoc, doc, getDocs } from 'firebase/firestore';
+import { db } from '../lib/firebase';
 import { FloorPlan, FloorPlanPin } from '../types';
-import { Map, Upload, Plus, X, MapPin, Image as ImageIcon, Trash2, List } from 'lucide-react';
-import { cn } from '../lib/utils';
+import { Map, Plus, X, MapPin, Image as ImageIcon, Trash2, List, HardDrive, ShieldAlert, Loader2 } from 'lucide-react';
+import { cn, getDisplayUrl } from '../lib/utils';
+import { uploadImageToDrive } from '../lib/driveUpload';
+import ConfirmModal from './ConfirmModal';
 
 export default function FloorPlanManager({ warrantyId, onClose, projectName }: { warrantyId: string, onClose: () => void, projectName: string }) {
   const [plans, setPlans] = useState<FloorPlan[]>([]);
@@ -19,6 +20,7 @@ export default function FloorPlanManager({ warrantyId, onClose, projectName }: {
   const [showAddPlan, setShowAddPlan] = useState(false);
   const [newPlanName, setNewPlanName] = useState('');
   const [newPlanFile, setNewPlanFile] = useState<File | null>(null);
+  const [planUploadError, setPlanUploadError] = useState('');
 
   // Add/Edit Pin Modal
   const [showPinModal, setShowPinModal] = useState(false);
@@ -27,9 +29,19 @@ export default function FloorPlanManager({ warrantyId, onClose, projectName }: {
   const [pinDesc, setPinDesc] = useState('');
   const [pinFile, setPinFile] = useState<File | null>(null);
   const [isSavingPin, setIsSavingPin] = useState(false);
+  const [pinSaveError, setPinSaveError] = useState('');
 
   // View Pin Detail
   const [viewingPin, setViewingPin] = useState<FloorPlanPin | null>(null);
+
+  // Confirm Delete Modal
+  const [deleteTarget, setDeleteTarget] = useState<
+    | { type: 'pin'; pin: FloorPlanPin }
+    | { type: 'plan'; plan: FloorPlan }
+    | null
+  >(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
 
   const imageContainerRef = useRef<HTMLDivElement>(null);
 
@@ -72,43 +84,63 @@ export default function FloorPlanManager({ warrantyId, onClose, projectName }: {
     e.preventDefault();
     if (!newPlanName || !newPlanFile) return;
     setUploadingPlan(true);
+    setPlanUploadError('');
     try {
-      const fileRef = ref(storage, `floorPlans/${warrantyId}/${Date.now()}_${newPlanFile.name}`);
-      await uploadBytes(fileRef, newPlanFile);
-      const url = await getDownloadURL(fileRef);
-      
-      await addDoc(collection(db, 'floorPlans'), {
+      const url = await uploadImageToDrive(newPlanFile, {
+        projectName: projectName || '未分類專案',
+        vendorCompany: '保固範圍平面圖',
+        issueName: newPlanName,
+        maxDimension: 2400,
+        quality: 0.85,
+      });
+
+      const docRef = await addDoc(collection(db, 'floorPlans'), {
         warrantyId,
         name: newPlanName,
         imageUrl: url,
         createdAt: serverTimestamp()
       });
-      
+
+      setSelectedPlanId(docRef.id);
       setShowAddPlan(false);
       setNewPlanName('');
       setNewPlanFile(null);
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      alert('上傳失敗');
+      setPlanUploadError(err?.message || '上傳失敗，請確認網路連線或稍後再試');
     } finally {
       setUploadingPlan(false);
     }
   };
 
-  const handleDeletePlan = async (plan: FloorPlan) => {
-    if (!confirm(`確定要刪除「${plan.name}」嗎？這會同時刪除該圖面上的所有標記。`)) return;
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget || isDeleting) return;
+    setIsDeleting(true);
+    setDeleteError('');
+
     try {
-      const pinsToDelete = pins.filter(p => p.planId === plan.id);
-      for (const p of pinsToDelete) {
-        await deleteDoc(doc(db, 'floorPlanPins', p.id));
+      if (deleteTarget.type === 'pin') {
+        await deleteDoc(doc(db, 'floorPlanPins', deleteTarget.pin.id));
+        setViewingPin(null);
+      } else {
+        const plan = deleteTarget.plan;
+        const pinsSnap = await getDocs(
+          query(collection(db, 'floorPlanPins'), where('planId', '==', plan.id))
+        );
+        for (const p of pinsSnap.docs) {
+          await deleteDoc(doc(db, 'floorPlanPins', p.id));
+        }
+        await deleteDoc(doc(db, 'floorPlans', plan.id));
+        if (selectedPlanId === plan.id) {
+          setSelectedPlanId(plans.filter(p => p.id !== plan.id)[0]?.id || null);
+        }
       }
-      await deleteDoc(doc(db, 'floorPlans', plan.id));
-      if (selectedPlanId === plan.id) {
-        setSelectedPlanId(plans.filter(p => p.id !== plan.id)[0]?.id || null);
-      }
-    } catch (err) {
-      console.error(err);
-      alert('刪除失敗');
+      setDeleteTarget(null);
+    } catch (err: any) {
+      console.error('Delete error:', err);
+      setDeleteError(err?.message || '刪除失敗，請稍後再試');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -122,6 +154,7 @@ export default function FloorPlanManager({ warrantyId, onClose, projectName }: {
       setPinTitle('');
       setPinDesc('');
       setPinFile(null);
+      setPinSaveError('');
       setShowPinModal(true);
     }
   };
@@ -130,13 +163,18 @@ export default function FloorPlanManager({ warrantyId, onClose, projectName }: {
     e.preventDefault();
     if (!pinTempPos || !selectedPlanId || !pinTitle) return;
     setIsSavingPin(true);
-    
+    setPinSaveError('');
+
     try {
       let photoUrl = '';
       if (pinFile) {
-        const fileRef = ref(storage, `floorPlanPins/${warrantyId}/${Date.now()}_${pinFile.name}`);
-        await uploadBytes(fileRef, pinFile);
-        photoUrl = await getDownloadURL(fileRef);
+        photoUrl = await uploadImageToDrive(pinFile, {
+          projectName: projectName || '未分類專案',
+          vendorCompany: '保固範圍平面圖',
+          issueName: `${selectedPlan?.name || '平面圖'}_${pinTitle}`,
+          maxDimension: 1200,
+          quality: 0.75,
+        });
       }
 
       await addDoc(collection(db, 'floorPlanPins'), {
@@ -151,23 +189,15 @@ export default function FloorPlanManager({ warrantyId, onClose, projectName }: {
       });
 
       setShowPinModal(false);
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      alert('儲存標記失敗');
+      setPinSaveError(err?.message || '儲存標記失敗，請稍後再試');
     } finally {
       setIsSavingPin(false);
     }
   };
 
-  const handleDeletePin = async (pinId: string) => {
-    if (!confirm('確定刪除此標記？')) return;
-    try {
-      await deleteDoc(doc(db, 'floorPlanPins', pinId));
-      setViewingPin(null);
-    } catch(err) {
-      console.error(err);
-    }
-  };
+
 
   const selectedPlan = plans.find(p => p.id === selectedPlanId);
 
@@ -224,7 +254,10 @@ export default function FloorPlanManager({ warrantyId, onClose, projectName }: {
                 <div className="p-4 border-b border-slate-100 flex justify-between items-center">
                   <h3 className="font-semibold text-slate-700">圖面清單</h3>
                   <button 
-                    onClick={() => setShowAddPlan(true)}
+                    onClick={() => {
+                      setPlanUploadError('');
+                      setShowAddPlan(true);
+                    }}
                     className="p-1.5 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
                     title="新增平面圖"
                   >
@@ -248,8 +281,13 @@ export default function FloorPlanManager({ warrantyId, onClose, projectName }: {
                       >
                         <span className="truncate">{plan.name}</span>
                         <button 
-                          onClick={(e) => { e.stopPropagation(); handleDeletePlan(plan); }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDeleteError('');
+                            setDeleteTarget({ type: 'plan', plan });
+                          }}
                           className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors"
+                          title="刪除平面圖"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -275,8 +313,9 @@ export default function FloorPlanManager({ warrantyId, onClose, projectName }: {
                       onDoubleClick={handleDoubleClickMap}
                     >
                       <img 
-                        src={selectedPlan.imageUrl} 
+                        src={getDisplayUrl(selectedPlan.imageUrl)} 
                         alt={selectedPlan.name}
+                        referrerPolicy="no-referrer"
                         className="max-w-full max-h-[85vh] object-contain pointer-events-none"
                       />
                       
@@ -339,7 +378,7 @@ export default function FloorPlanManager({ warrantyId, onClose, projectName }: {
                                     <td className="px-4 py-3 text-slate-600 whitespace-pre-wrap">{pin.description || '-'}</td>
                                     <td className="px-4 py-3">
                                       {pin.photoUrl ? (
-                                        <a href={pin.photoUrl} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline">查看</a>
+                                        <a href={getDisplayUrl(pin.photoUrl)} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline">查看</a>
                                       ) : '-'}
                                     </td>
                                   </tr>
@@ -362,7 +401,17 @@ export default function FloorPlanManager({ warrantyId, onClose, projectName }: {
       {showAddPlan && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/50" onClick={() => !uploadingPlan && setShowAddPlan(false)}>
           <div className="bg-white rounded-xl w-full max-w-md p-6 shadow-xl" onClick={e => e.stopPropagation()}>
-            <h3 className="text-lg font-bold text-slate-800 mb-4">新增平面圖</h3>
+            <h3 className="text-lg font-bold text-slate-800 mb-3">新增平面圖</h3>
+            <div className="flex items-center gap-2 text-xs font-semibold text-blue-700 bg-blue-50 border border-blue-100 rounded-lg px-3 py-2 mb-4">
+              <HardDrive className="w-4 h-4 shrink-0" />
+              <span>圖檔將直接上傳至 Google 雲端硬碟歸檔</span>
+            </div>
+            {planUploadError && (
+              <div className="mb-4 bg-red-50 border border-red-100 text-red-700 rounded-lg p-3 flex items-start gap-2 text-xs font-semibold">
+                <ShieldAlert className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
+                <span className="leading-relaxed">{planUploadError}</span>
+              </div>
+            )}
             <form onSubmit={handleAddPlan} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">圖面名稱 (如: A棟2F)</label>
@@ -381,7 +430,10 @@ export default function FloorPlanManager({ warrantyId, onClose, projectName }: {
                   type="file"
                   required
                   accept="image/*"
-                  onChange={e => setNewPlanFile(e.target.files?.[0] || null)}
+                  onChange={e => {
+                    setNewPlanFile(e.target.files?.[0] || null);
+                    setPlanUploadError('');
+                  }}
                   className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg"
                 />
               </div>
@@ -399,7 +451,12 @@ export default function FloorPlanManager({ warrantyId, onClose, projectName }: {
                   disabled={uploadingPlan || !newPlanName || !newPlanFile}
                   className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 flex items-center gap-2"
                 >
-                  {uploadingPlan ? '上傳中...' : '儲存'}
+                  {uploadingPlan ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      上傳至雲端硬碟...
+                    </>
+                  ) : '儲存'}
                 </button>
               </div>
             </form>
@@ -412,6 +469,12 @@ export default function FloorPlanManager({ warrantyId, onClose, projectName }: {
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/50" onClick={() => !isSavingPin && setShowPinModal(false)}>
           <div className="bg-white rounded-xl w-full max-w-md p-6 shadow-xl" onClick={e => e.stopPropagation()}>
             <h3 className="text-lg font-bold text-slate-800 mb-4">新增保固項目</h3>
+            {pinSaveError && (
+              <div className="mb-4 bg-red-50 border border-red-100 text-red-700 rounded-lg p-3 flex items-start gap-2 text-xs font-semibold">
+                <ShieldAlert className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
+                <span className="leading-relaxed">{pinSaveError}</span>
+              </div>
+            )}
             <form onSubmit={handleSavePin} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">項目名稱 / 地點</label>
@@ -434,7 +497,7 @@ export default function FloorPlanManager({ warrantyId, onClose, projectName }: {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">現場照片 (選填)</label>
+                <label className="block text-sm font-medium text-slate-700 mb-1">現場照片 (選填，上傳至 Google 雲端硬碟)</label>
                 <input
                   type="file"
                   accept="image/*"
@@ -456,7 +519,12 @@ export default function FloorPlanManager({ warrantyId, onClose, projectName }: {
                   disabled={isSavingPin || !pinTitle}
                   className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 flex items-center gap-2"
                 >
-                  {isSavingPin ? '儲存中...' : '儲存標記'}
+                  {isSavingPin ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      儲存中...
+                    </>
+                  ) : '儲存標記'}
                 </button>
               </div>
             </form>
@@ -484,21 +552,35 @@ export default function FloorPlanManager({ warrantyId, onClose, projectName }: {
               {viewingPin.photoUrl && (
                 <div>
                   <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">照片</div>
-                  <a href={viewingPin.photoUrl} target="_blank" rel="noopener noreferrer" className="block rounded-lg overflow-hidden border border-slate-200 hover:border-indigo-400 transition-colors">
-                    <img src={viewingPin.photoUrl} alt={viewingPin.title} className="w-full h-auto object-cover max-h-48" />
+                  <a href={getDisplayUrl(viewingPin.photoUrl)} target="_blank" rel="noopener noreferrer" className="block rounded-lg overflow-hidden border border-slate-200 hover:border-indigo-400 transition-colors">
+                    <img src={getDisplayUrl(viewingPin.photoUrl)} alt={viewingPin.title} referrerPolicy="no-referrer" className="w-full h-auto object-cover max-h-48" />
                   </a>
                 </div>
               )}
             </div>
+            {deleteError && (
+              <div className="mt-4 bg-red-50 border border-red-100 text-red-700 rounded-lg p-3 flex items-start gap-2 text-xs font-semibold">
+                <ShieldAlert className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
+                <span className="leading-relaxed">{deleteError}</span>
+              </div>
+            )}
             <div className="flex justify-between items-center mt-8 pt-4 border-t border-slate-100">
               <button 
-                onClick={() => handleDeletePin(viewingPin.id)}
+                type="button"
+                onClick={() => {
+                  setDeleteError('');
+                  setDeleteTarget({ type: 'pin', pin: viewingPin });
+                }}
                 className="text-red-600 hover:bg-red-50 px-3 py-1.5 rounded-md text-sm font-medium transition-colors flex items-center gap-1"
               >
                 <Trash2 className="w-4 h-4" /> 刪除標記
               </button>
               <button
-                onClick={() => setViewingPin(null)}
+                type="button"
+                onClick={() => {
+                  setDeleteError('');
+                  setViewingPin(null);
+                }}
                 className="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors font-medium"
               >
                 關閉
@@ -507,6 +589,20 @@ export default function FloorPlanManager({ warrantyId, onClose, projectName }: {
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={!!deleteTarget}
+        title={deleteTarget?.type === 'plan' ? '刪除平面圖' : '刪除標記'}
+        message={
+          deleteTarget?.type === 'plan'
+            ? `確定要刪除「${deleteTarget.plan.name}」嗎？這會同時刪除該圖面上的所有標記。`
+            : `確定要刪除「${deleteTarget?.pin.title || ''}」這個標記嗎？`
+        }
+        onConfirm={handleConfirmDelete}
+        onCancel={() => {
+          if (!isDeleting) setDeleteTarget(null);
+        }}
+      />
     </div>
   );
 }

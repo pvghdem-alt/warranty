@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { UploadCloud, X, Loader2, HardDrive, CheckCircle2, ShieldAlert } from 'lucide-react';
 import { cn, getDisplayUrl } from '../lib/utils';
+import { uploadImageToDrive } from '../lib/driveUpload';
 
 interface ImageUploadProps {
   photoUrls: string[];
@@ -10,39 +11,6 @@ interface ImageUploadProps {
   vendorCompany?: string;
   issueName?: string;
 }
-
-const compressImage = (file: File): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = (event) => {
-      const img = new Image();
-      img.src = event.target?.result as string;
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        let width = img.width;
-        let height = img.height;
-        const max = 1200;
-
-        if (width > height && width > max) {
-          height *= max / width;
-          width = max;
-        } else if (height > max) {
-          width *= max / height;
-          height = max;
-        }
-
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        ctx?.drawImage(img, 0, 0, width, height);
-        resolve(canvas.toDataURL('image/jpeg', 0.7)); // 70% quality JPEG
-      };
-      img.onerror = (e) => reject(e);
-    };
-    reader.onerror = (e) => reject(e);
-  });
-};
 
 export const deletePhotoFromDrive = async (url: string): Promise<boolean> => {
   // In a webhook setup without auth, delete is usually restricted or complex.
@@ -78,97 +46,12 @@ export default function ImageUpload({
       const newUrls = [...photoUrls];
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
-        
-        // Native Canvas compression (fast & reliable, avoids web worker hangs)
-        const base64DataUrl = await compressImage(file);
-        
-        let resultUrl = '';
-        let uploadSuccess = false;
-        
-        // 優先使用後端 Proxy API，因為後端 Proxy 不受瀏覽器 CORS 限制影響
-        try {
-          const scriptUrlOption = import.meta.env.VITE_GOOGLE_SCRIPT_WEBHOOK_URL || 'https://script.google.com/macros/s/AKfycby7A7v4fv7SECH6mRWdmpS4ThyJ6bocM2jfY1N78aQdKJNaWHr_c15rNElIRXnkQNjl/exec';
-
-          const response = await fetch('/api/drive/upload', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              base64: base64DataUrl,
-              fileName: file.name,
-              mimeType: 'image/jpeg',
-              projectName: projectName || '未分類專案',
-              vendorCompany: vendorCompany || '未指定廠商',
-              issueName: issueName || '未命名工單',
-              scriptUrl: scriptUrlOption
-            })
-          });
-
-          if (response.ok) {
-            const data = await response.json();
-            if (data && data.url) {
-              resultUrl = data.url;
-              uploadSuccess = true;
-            } else if (data && data.error) {
-              throw new Error(data.error);
-            }
-          } else {
-            const errData = await response.json().catch(() => ({}));
-            throw new Error(errData.error || `Server responded with status ${response.status}`);
-          }
-        } catch (backendError: any) {
-          console.warn("Backend proxy upload failed/unconfigured, attempting frontend direct upload:", backendError);
-          
-          try {
-            // 如果後端 Proxy 失敗 (例如：純前端佈署、或環境變數不對)，再嘗試前端直接傳送 (CORS / Webhook URL fallback)
-            const scriptUrl = import.meta.env.VITE_GOOGLE_SCRIPT_WEBHOOK_URL || 'https://script.google.com/macros/s/AKfycby7A7v4fv7SECH6mRWdmpS4ThyJ6bocM2jfY1N78aQdKJNaWHr_c15rNElIRXnkQNjl/exec';
-            
-            const response = await fetch(scriptUrl, {
-              method: 'POST',
-              // 必須只用 text/plain (不可加上 charset=utf-8) 否則會觸發 OPTIONS 預檢導致 CORS 失敗
-              headers: { 'Content-Type': 'text/plain' },
-              body: JSON.stringify({
-                base64: base64DataUrl,
-                fileName: file.name,
-                mimeType: 'image/jpeg',
-                projectName: projectName || '未分類專案',
-                vendorCompany: vendorCompany || '未指定廠商',
-                issueName: issueName || '未命名工單'
-              })
-            });
-
-            const resultText = await response.text();
-            let result;
-            try {
-              result = JSON.parse(resultText);
-            } catch (e) {
-              throw new Error('Google Apps Script Webhook 回傳格式異常 (請確認部署狀態為「我(Me)」且「所有人」)');
-            }
-            
-            if (result.success && result.url) {
-              resultUrl = result.url;
-              uploadSuccess = true;
-            } else {
-              throw new Error(result.error || backendError.message || '上傳失敗');
-            }
-          } catch (fallbackError: any) {
-            console.error("Fallback upload also failed:", fallbackError);
-            throw new Error(`上傳失敗！如果您已部署至外部伺服器 (如 Render/GitHub)，請務必於環境變數中設定正確的 GOOGLE_SCRIPT_WEBHOOK_URL。(後端錯誤：${backendError.message})`);
-          }
-        }
-
-        if (uploadSuccess && resultUrl) {
-          let directUrl = resultUrl;
-          // 將 Google Drive 分享連結轉換為圖片直連連結 (直接顯示用)
-          if (directUrl.includes('drive.google.com')) {
-            const idMatch = directUrl.match(/[-\w]{25,}/);
-            if (idMatch && idMatch[0]) {
-              directUrl = `https://drive.google.com/uc?export=view&id=${idMatch[0]}`;
-            }
-          }
-          newUrls.push(directUrl);
-        } else {
-          throw new Error('上傳失敗：無法取得雲端圖片連結');
-        }
+        const directUrl = await uploadImageToDrive(file, {
+          projectName: projectName || '未分類專案',
+          vendorCompany: vendorCompany || '未指定廠商',
+          issueName: issueName || '未命名工單',
+        });
+        newUrls.push(directUrl);
       }
       onChange(newUrls);
     } catch (err: any) {
